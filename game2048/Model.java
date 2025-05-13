@@ -132,7 +132,7 @@ public class Model extends Observable {
         /** 将所有有值的格子移动到side方向 */
         board.setViewingPerspective(side);
         // 储存器
-        Tile boctile = null;
+        Tile boxtile = null;
         Integer [] nullableCS = new Integer[2];
         int row = board.size() - 1;
         // 遍历
