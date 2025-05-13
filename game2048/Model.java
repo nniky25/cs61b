@@ -107,9 +107,9 @@ public class Model extends Observable {
      *    and the trailing tile does not.
      * */
 
-    // the first step to move board to a compact state.
+    // step 1:move
     // TODO:step 1
-    private void move(Integer[] CS, Tile tile, boolean state) {
+    private boolean move(Integer[] CS, Tile tile, boolean state) {
         if (CS[0] != null && tile != null) {
             boolean result;
             result = board.move(CS[0], CS[1], tile);
@@ -117,34 +117,48 @@ public class Model extends Observable {
             if (!state) {
                 state = true;
             }
+            return true;
         }
+        return false;
     }
 
     public boolean tilt(Side side) {
         boolean changed;
         changed = false;
-
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
-        // the first step to move board to a compact state.
 
+        /** 将所有有值的格子移动到side方向 */
         board.setViewingPerspective(side);
-        Integer[] nullableCS = new Integer[2];
-        Tile boxtile = null;
+        // 储存器
+        Tile boctile = null;
+        Integer [] nullableCS = new Integer[2];
+        int row = board.size() - 1;
+        // 遍历
         for (int col = 0; col < board.size(); col += 1) {
-            for (int row = 0; row < board.size(); row += 1) {
+            while (row >= 0) {
+                // 储存无值的格子
                 if (board.tile(col, row) == null) {
                     if (nullableCS[0] == null) {
-                        nullableCS [0] = col;
-                        nullableCS [1] = row;
+                        nullableCS[0] = col;
+                        nullableCS[1] = row;
                     }
+                // 储存有值的格子
                 } else if (board.tile(col, row) != null) {
                     if (boxtile == null) {
                         boxtile = board.tile(col, row);
                     }
                 }
-                move(nullableCS , boxtile, changed);
+                // 判断是否具备move条件
+                if (move(nullableCS , boxtile, changed)) {
+                    row = nullableCS[1] - 1;
+                    nullableCS[0] = null;
+                    nullableCS[1] = null;
+                    boxtile = null;
+                } else {
+                    row -= 1;
+                }
             }
         }
 
