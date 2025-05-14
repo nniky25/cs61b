@@ -108,21 +108,59 @@ public class Model extends Observable {
      * */
 
     // step 1:move
-    // TODO:step 1
-    private boolean move(Integer[] CS, Tile tile, boolean state) {
+    // TODO: step 1
+    private boolean move(Integer[] CS, Tile tile) {
         if (CS[0] != null && tile != null) {
             boolean result;
             result = board.move(CS[0], CS[1], tile);
             assert !result : "The move of step one have something wrong!";
-            if (!state) {
-                state = true;
-            }
             return true;
         }
         return false;
     }
 
+    // step 2:full one col of upside
+    // TODO: step 2
+    private boolean full_one_col(int col, int row) {
+        boolean result;
+        result = false;
+        Tile boxtile = null;
+        Integer [] nullableCS = new Integer[2];
+        // 遍历
+        while (row >= 0) {
+            // 储存无值的格子
+            if (board.tile(col, row) == null) {
+                if (nullableCS[0] == null) {
+                    nullableCS[0] = col;
+                    nullableCS[1] = row;
+                }
+                // 储存有值的格子
+            } else if (board.tile(col, row) != null) {
+                if (nullableCS[0] != null) {
+                    boxtile = board.tile(col, row);
+                }
+            }
+            // 判断是否具备move条件
+            if (move(nullableCS , boxtile)) {
+                result = true;
+                row = nullableCS[1] - 1;
+                nullableCS[0] = null;
+                nullableCS[1] = null;
+                boxtile = null;
+            } else {
+                if (row == 0) {
+                    nullableCS[0] = null;
+                    nullableCS[1] = null;
+                    boxtile = null;
+                }
+                row -= 1;
+            }
+        }
+        return result;
+    }
+
     public boolean tilt(Side side) {
+        Side init = Side.NORTH;
         boolean changed;
         changed = false;
         // TODO: Modify this.board (and perhaps this.score) to account
@@ -131,37 +169,59 @@ public class Model extends Observable {
 
         /** 将所有有值的格子移动到side方向 */
         board.setViewingPerspective(side);
-        // 储存器
-        Tile boxtile = null;
-        Integer [] nullableCS = new Integer[2];
         int row = board.size() - 1;
         // 遍历
         for (int col = 0; col < board.size(); col += 1) {
-            while (row >= 0) {
-                // 储存无值的格子
-                if (board.tile(col, row) == null) {
-                    if (nullableCS[0] == null) {
-                        nullableCS[0] = col;
-                        nullableCS[1] = row;
-                    }
-                // 储存有值的格子
-                } else if (board.tile(col, row) != null) {
-                    if (boxtile == null) {
-                        boxtile = board.tile(col, row);
-                    }
-                }
-                // 判断是否具备move条件
-                if (move(nullableCS , boxtile, changed)) {
-                    row = nullableCS[1] - 1;
-                    nullableCS[0] = null;
-                    nullableCS[1] = null;
-                    boxtile = null;
-                } else {
-                    row -= 1;
-                }
+            if (full_one_col(col, row)) {
+                changed = true;
             }
         }
 
+        // 完成最后的加分和移动
+        int row0;
+        Tile boxfront = null;
+        Tile boxafter = null;
+        Integer [] boxfrontCS = new Integer[2];
+
+        for (int col = 0; col < board.size(); col += 1) {
+            row0 = board.size() - 1;
+            while (row0 >= 0) {
+                if (board.tile(col, row0) == null) {
+                    boxfront = null;
+                    boxafter = null;
+                    boxfrontCS[0] = null;
+                    boxfrontCS[1] = null;
+                    row0 = -1;
+                } else {
+                    if (boxfront == null) {
+                        boxfront = board.tile(col, row0);
+                        boxfrontCS[0] = col;
+                        boxfrontCS[1] = row0;
+                        row0 -= 1;
+                    } else {
+                        boxafter = board.tile(col, row0);
+                        if (boxfront.value() == boxafter.value()) {
+                            if (board.move(boxfrontCS[0], boxfrontCS[1], boxafter)) {
+                                changed = true;
+                                score += board.tile(boxfrontCS[0], boxfrontCS[1]).value();
+                                full_one_col(col, row0);
+                                boxfront = null;
+                                boxafter = null;
+                                boxfrontCS[0] = null;
+                                boxfrontCS[1] = null;
+                            }
+                        } else {
+                            boxfront = boxafter;
+                            boxafter = null;
+                            boxfrontCS[0] = col;
+                            boxfrontCS[1] = row0;
+                            row0 -= 1;
+                        }
+                    }
+                }
+            }
+        }
+        board.startViewingFrom(init);
         checkGameOver();
         if (changed) {
             setChanged();
