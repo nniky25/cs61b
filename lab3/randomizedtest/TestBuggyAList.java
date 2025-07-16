@@ -29,6 +29,5 @@ public class TestBuggyAList {
             int actual = actualList.removeLast();
             assertEquals("Mismatch at remove iteration " + i, expected, actual);
         }
-}
-
+    }
 }
