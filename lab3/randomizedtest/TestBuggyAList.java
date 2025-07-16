@@ -30,4 +30,40 @@ public class TestBuggyAList {
             assertEquals("Mismatch at remove iteration " + i, expected, actual);
         }
     }
+
+    @Test
+    public void randomizedTest() {
+        AListNoResizing<Integer> L = new AListNoResizing<>();
+        BuggyAList<Integer> B = new BuggyAList<>();
+
+        int N = 5000;
+        for (int i = 0; i < N; i += 1) {
+            int operationNumber = StdRandom.uniform(0, 3);
+            if (operationNumber == 0) {
+                // addLast
+                int randVal = StdRandom.uniform(0, 100);
+                L.addLast(randVal);
+                B.addLast(randVal);
+                System.out.println("addLast(" + randVal + ")");
+            } else if (operationNumber == 1) {
+                // size
+                int sizeL = L.size();
+                int sizeB = B.size();
+                assertEquals("size mismatch at position" + i, sizeL, sizeB);
+            } else {
+                if (L.size() > 0) {
+                    int randomValue = StdRandom.uniform(0, 2);
+                    if (randomValue == 0) {
+                        int lastL = L.getLast();
+                        int LastB = B.getLast();
+                        assertEquals("getLast mismatch at position" + i, lastL, LastB);
+                    } else {
+                        int lastL = L.removeLast();
+                        int lastB = B.removeLast();
+                        assertEquals("removeLast mismatch at position" + i, lastL, lastB);
+                    }
+                }
+            }
+        }
+    }
 }
