@@ -11,22 +11,24 @@ public class TestBuggyAList {
     // YOUR TESTS HERE
 
     @Test
-    public void testThreeAddThreeRemove() {
-        AListNoResizing<Integer> testList1 = new AListNoResizing<>();
-        BuggyAList<Integer> testList2 = new BuggyAList<>();
+    public void testAddAndRemoveConsistency() {
+        AListNoResizing<Integer> expectedList = new AListNoResizing<>();
+        BuggyAList<Integer> actualList = new BuggyAList<>();
 
-        int addTimes = 3;
-        int removeTimes = 3;
+        final int operationsCount = 3;
 
-        for (int i = 0; i < addTimes; i++) {
-            testList1.addLast(i);
-            testList2.addLast(i);
+        // Add elements
+        for (int i = 0; i < operationsCount; i++) {
+            expectedList.addLast(i);
+            actualList.addLast(i);
         }
-        for (int i = 0; i < removeTimes; i++) {
-            int a = testList1.removeLast();
-            int b = testList2.removeLast();
-            assertEquals(a, b);
+
+        // Remove elements and assert equality
+        for (int i = 0; i < operationsCount; i++) {
+            int expected = expectedList.removeLast();
+            int actual = actualList.removeLast();
+            assertEquals("Mismatch at remove iteration " + i, expected, actual);
         }
-    }
+}
 
 }
