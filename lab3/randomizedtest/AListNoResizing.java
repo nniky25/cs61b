@@ -9,7 +9,7 @@ package randomizedtest;
 // size: 5
 
 /* Invariants:
- addLast: The next item we want to add, will go into position size
+ addLast: The n  ext item we want to add, will go into position size
  getLast: The item we want to return is in position size - 1
  size: The number of items in the list should be size.
 */
