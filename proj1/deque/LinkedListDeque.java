@@ -148,7 +148,7 @@ public class LinkedListDeque<T> implements Iterable<T>{
         if (index < size / 2) {
             return getRecursiveHelperBack(sentinel.next, index);
         } else {
-            return getRecursiveHelperFront(sentinel.prev, size - index);
+            return getRecursiveHelperFront(sentinel.prev, size - index - 1);
         }
     }
 
@@ -176,11 +176,12 @@ public class LinkedListDeque<T> implements Iterable<T>{
     public void printDeque() {
         Node current = sentinel.next;
         for (int i = 0; i < size; i++) {
-            if (i == size) {
-                System.out.println();
-            }
             System.out.print(current.item);
             System.out.print(" ");
+            current = current.next;
+            if (i == size - 1) {
+                System.out.println();
+            }
         }
     }
 

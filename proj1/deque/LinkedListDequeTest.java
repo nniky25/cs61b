@@ -111,4 +111,46 @@ public class LinkedListDequeTest {
             assertEquals("Should have the same value", i, (double) lld1.removeLast(), 0.0);
         }
     }
+
+    @Test
+    /* Test get item with getRecursive method. */
+    public void getRecursiveTest() {
+        LinkedListDeque<Integer> lld1 = new LinkedListDeque<>();
+        for (int i = 0; i < 10; i++) {
+            lld1.addLast(i);
+        }
+
+        for (int i = 0; i < 10; i++) {
+            // lld1.getRecursive is boxed type(Integer), so needs to be cast to (int) type.
+            // auto-unboxing (Integer → int)
+            assertEquals("Should have the same value" + i, i, (int) lld1.getRecursive(i));
+        }
+    }
+
+    @Test
+    /* Test getFirst and getLast methods. */
+    public void getFirstAndLastTest() {
+        LinkedListDeque<Integer> lld1 = new LinkedListDeque<>();
+        for (int i = 0; i < 10; i ++) {
+            lld1.addLast(i);
+        }
+
+        assertEquals("lld1 first item should be 0", 0, (int) lld1.getFirst());
+        assertEquals("lld1 last item should be 9", 9, (int) lld1.getLast());
+    }
+
+    @Test
+    /* Test remove method with printDeque method. */
+    public void removeAndPrintTest() {
+        LinkedListDeque<Integer> lld1 = new LinkedListDeque<>();
+        for (int i = 0; i < 5; i++) {
+            lld1.addLast(i);
+        }
+
+        int removeItem = lld1.remove(3);
+
+        assertEquals("the remove item should be 3", 3, removeItem);
+        lld1.printDeque();
+    }
+
 }
