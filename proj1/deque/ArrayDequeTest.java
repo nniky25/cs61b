@@ -98,7 +98,7 @@ public class ArrayDequeTest {
 
     @Test
     /* fill up, empty, fill up again. */
-    public void fillEmptyFillTest() {
+    public void fillEmptyFillBigTest() {
         ArrayDeque<Integer> ard1 = new ArrayDeque<>();
 
         for (int i = 0; i < 1000; i ++) {
@@ -113,6 +113,30 @@ public class ArrayDequeTest {
         assertTrue(ard1.isEmpty());
 
         for (int i = 0; i < 1000; i ++) {
+            ard1.addLast(i);
+            ard1.addFirst(i);
+        }
+
+        assertFalse(ard1.isEmpty());
+    }
+
+    @Test
+    /* fill up, empty, fill up again. */
+    public void fillEmptyFillSmallTest() {
+        ArrayDeque<Integer> ard1 = new ArrayDeque<>();
+
+        for (int i = 0; i < 50; i ++) {
+            ard1.addLast(i);
+            ard1.addFirst(i);
+        }
+
+        for (int i = 0; i < 100; i ++) {
+            ard1.removeLast();
+        }
+
+        assertTrue(ard1.isEmpty());
+
+        for (int i = 0; i < 50; i ++) {
             ard1.addLast(i);
             ard1.addFirst(i);
         }

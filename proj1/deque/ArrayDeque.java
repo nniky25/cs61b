@@ -104,7 +104,7 @@ public class ArrayDeque<T> {
                 lastIndex = 0;
                 firstIndex = 0;
             } else {
-                if (firstIndex == length) {
+                if (firstIndex == length - 1) {
                     firstIndex = 0;
                 } else {
                     firstIndex = firstIndex + 1;
