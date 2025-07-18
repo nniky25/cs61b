@@ -7,7 +7,7 @@ public class ArrayDeque<T> {
     private T[] items;
     private int firstIndex;
     private int lastIndex;
-    private int length;
+    public int length;
     private int size;
 
     public ArrayDeque() {
@@ -74,8 +74,8 @@ public class ArrayDeque<T> {
                     System.arraycopy(items, lastIndex + 1, a, capacity - (size - firstIndex), size - firstIndex);
                     firstIndex = capacity - (size - firstIndex);
                 } else {
-                    System.arraycopy(items, capacity - (size - firstIndex), a, capacity - (size - firstIndex), size - firstIndex);
-                    firstIndex = capacity - (size - firstIndex);
+                    System.arraycopy(items, firstIndex, a, capacity - (length - firstIndex), length - firstIndex);
+                    firstIndex = capacity - (length - firstIndex);
                 }
             }
         } else {
