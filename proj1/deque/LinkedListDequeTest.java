@@ -153,4 +153,20 @@ public class LinkedListDequeTest {
         lld1.printDeque();
     }
 
+    @Test
+    /* Test get() method. */
+    public void getTest() {
+        LinkedListDeque<Integer> lld1 = new LinkedListDeque<>();
+        for (int i = 0; i < 5; i++) {
+            lld1.addLast(i);
+        }
+
+        assertEquals("the remove item should be 0", 0, (int) lld1.get(0));
+        assertEquals("the remove item should be 1", 1, (int) lld1.get(1));
+        assertEquals("the remove item should be 2", 2, (int) lld1.get(2));
+        assertEquals("the remove item should be 3", 3, (int) lld1.get(3));
+        assertEquals("the remove item should be 4", 4, (int) lld1.get(4));
+
+    }
+
 }

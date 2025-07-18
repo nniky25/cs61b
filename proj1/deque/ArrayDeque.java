@@ -44,6 +44,7 @@ public class ArrayDeque<T> {
             if (firstIndex == 0) {
                 firstIndex = length - 1;
                 items[firstIndex] = item;
+                size = size + 1;
             } else {
                 firstIndex = firstIndex - 1;
                 items[firstIndex] = item;
@@ -151,4 +152,63 @@ public class ArrayDeque<T> {
             return false;
         }
     }
+
+    public void printDeque() {
+        if (firstIndex <= lastIndex) {
+            int index = firstIndex;
+            for (int i = 0; i < size; i++) {
+                System.out.print(items[index]);
+                System.out.print(" ");
+            }
+            System.out.println();
+        } else {
+            for (int i = firstIndex; i < length; i++) {
+                System.out.print(items[i]);
+                System.out.print(" ");
+            }
+            for (int i = 0; i <= lastIndex; i++) {
+                System.out.print(items[i]);
+                System.out.print(" ");
+            }
+            System.out.println();
+        }
+    }
+
+    public T getFirst() {
+        if (size == 0) {
+            return null;
+        }
+
+        return items[firstIndex];
+    }
+
+    public T getLast() {
+        if (size == 0) {
+            return null;
+        }
+
+        return items[lastIndex];
+    }
+
+    /**@Override
+    public Iterator<T> iterator() {
+        return new ArrayDequeIterator();
+    }
+
+    private class ArrayDequeIterator implements Iterator<T> {
+        private int index = 0;
+
+        @Override
+        public boolean hasNext() {
+            return index < size;
+        }
+
+        @Override
+        public T next() {
+            int realIndex = (firstIndex + 1 + index) % length;
+            T item = items[realIndex];
+            index++;
+            return item;
+        }
+    }*/
 }
