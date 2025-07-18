@@ -19,38 +19,48 @@ public class ArrayDeque<T> {
     }
 
     public void addLast(T item) {
-        if (size == length) {
-            resize(length * 4);
+        if (size == 0) {
+            items[lastIndex] = item;
+            size = size + 1;
+        } else {
+            if (size == length) {
+                resize(length * 4);
+            }
+            lastIndex = lastIndex + 1;
+            items[lastIndex] = item;
+            size = size + 1;
         }
-        lastIndex = lastIndex + 1;
-        items[lastIndex] = item;
-        size = size + 1;
     }
 
     public void addFirst(T item) {
-        if (size == length) {
-            resize(length * 4);
-        }
-        if (firstIndex == 0) {
-            firstIndex = length - 1;
+        if (size == 0) {
             items[firstIndex] = item;
+            size = size + 1;
         } else {
-            firstIndex = firstIndex - 1;
-            items[firstIndex] = item;
-        }
+            if (size == length) {
+                resize(length * 4);
+            }
 
-        size = size + 1;
+            if (firstIndex == 0) {
+                firstIndex = length - 1;
+                items[firstIndex] = item;
+            } else {
+                firstIndex = firstIndex - 1;
+                items[firstIndex] = item;
+                size = size + 1;
+            }
+        }
     }
 
     public T get(int index) {
         if (size == 0) {
+            return null;
+        } else {
             if (firstIndex == 0) {
                 return items[index];
             } else {
                 return items[(index + firstIndex) % length];
             }
-        } else {
-            return null;
         }
     }
 
@@ -59,7 +69,7 @@ public class ArrayDeque<T> {
         if (items[0] != null) {
             System.arraycopy(items, 0, a, 0, lastIndex + 1);
             if (firstIndex != 0) {
-                if (size < capacity) {
+                if (length < capacity) {
                     System.arraycopy(items, lastIndex + 1, a, capacity - (size - firstIndex), size - firstIndex);
                     firstIndex = capacity - (size - firstIndex);
                 } else {
@@ -68,7 +78,9 @@ public class ArrayDeque<T> {
                 }
             }
         } else {
-            System.arraycopy(items, firstIndex, a, firstIndex, lastIndex - firstIndex + 1);
+            System.arraycopy(items, firstIndex, a, 0, lastIndex - firstIndex + 1);
+            firstIndex = 0;
+            lastIndex = firstIndex + size -1;
         }
         items = a;
         length = capacity;
@@ -79,13 +91,12 @@ public class ArrayDeque<T> {
         if (size == 0) {
             return null;
         } else {
-            size = size - 1;
             if (length >= 6 * 4) {
-                if (size * 4 < length) {
-                    resize(length / 4);
+                if ((size - 1) * 4 < length) {
+                    resize(length / 2);
                 }
             }
-
+            size = size - 1;
             items[firstIndex] = null;
 
             if (size == 0) {
@@ -95,7 +106,7 @@ public class ArrayDeque<T> {
                 if (firstIndex == length) {
                     firstIndex = 0;
                 } else {
-                    firstIndex = firstIndex - 1;
+                    firstIndex = firstIndex + 1;
                 }
             }
         }
@@ -107,13 +118,12 @@ public class ArrayDeque<T> {
         if (size == 0) {
             return null;
         } else {
-            size = size - 1;
             if (length >= 6 * 4) {
-                if (size * 4 < length) {
-                    resize(length / 4);
+                if ((size - 1) * 4 < length) {
+                    resize(length / 2);
                 }
             }
-
+            size = size - 1;
             items[lastIndex] = null;
 
             if (size == 0) {
