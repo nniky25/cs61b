@@ -10,6 +10,7 @@ public class ArrayDequeTest {
         ArrayDeque<Integer> ard1 = new ArrayDeque<>();
         for (int i = 0; i < 1000; i++) {
             ard1.addLast(i);
+            ard1.addFirst(i);
         }
         System.out.println((int) ard1.get(5));
     }
