@@ -131,7 +131,7 @@ public class ArrayDequeTest {
         }
 
         for (int i = 0; i < 100; i ++) {
-            ard1.removeLast();
+            ard1.removeFirst();
         }
 
         assertTrue(ard1.isEmpty());
