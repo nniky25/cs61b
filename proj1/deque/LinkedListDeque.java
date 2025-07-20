@@ -1,10 +1,10 @@
 package deque;
-import java.util.Deque;
+//import java.util.Deque;
 
 /** implement LinkedListDeque class
  * @author Garry
  */
-public class LinkedListDeque<T> {
+public class LinkedListDeque<T> implements Deque<T> {
     private class Node {
         public Node prev;
         public T item;
@@ -27,6 +27,7 @@ public class LinkedListDeque<T> {
         size = 0;
     }
 
+    @Override
     public void addLast(T item) {
         if (size == 0) {
             Node current = new Node(sentinel, item, sentinel);
@@ -43,6 +44,7 @@ public class LinkedListDeque<T> {
         }
     }
 
+    @Override
     public void addFirst(T item) {
         if (size == 0) {
             addLast(item);
@@ -54,6 +56,7 @@ public class LinkedListDeque<T> {
         }
     }
 
+    @Override
     public T get(int index) {
         if (index < 0 || index >= size) {
             return null;
@@ -99,6 +102,7 @@ public class LinkedListDeque<T> {
         return currentItem;
     }
 
+    @Override
     public T removeFirst() {
         if (size ==  0) {
             return null;
@@ -111,6 +115,7 @@ public class LinkedListDeque<T> {
         }
     }
 
+    @Override
     public T removeLast() {
         if (size ==  0) {
             return null;
@@ -151,27 +156,22 @@ public class LinkedListDeque<T> {
         }
     }
 
-
-    public T getFirst() {
-        return sentinel.next.item;
-    }
-
-    public T getLast() {
-        return lastNode.item;
-    }
-
+    @Override
     public int size() {
         return size;
     }
 
-    public boolean isEmpty() {
-        if (size == 0) {
-            return true;
-        } else {
-            return false;
-        }
+    @Override
+    public T getFirst() {
+        return sentinel.next.item;
     }
 
+    @Override
+    public T getLast() {
+        return lastNode.item;
+    }
+
+    @Override
     public void printDeque() {
         Node current = sentinel.next;
         for (int i = 0; i < size; i++) {

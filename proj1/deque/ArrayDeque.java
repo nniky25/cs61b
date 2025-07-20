@@ -3,7 +3,7 @@ package deque;
 /** implement ArrayDeque class
  * @auter Garry
  */
-public class ArrayDeque<T> {
+public class ArrayDeque<T> implements Deque<T> {
     private T[] items;
     private int firstIndex;
     private int lastIndex;
@@ -18,6 +18,7 @@ public class ArrayDeque<T> {
         size = 0;
     }
 
+    @Override
     public void addLast(T item) {
         if (size == 0) {
             items[lastIndex] = item;
@@ -32,6 +33,7 @@ public class ArrayDeque<T> {
         }
     }
 
+    @Override
     public void addFirst(T item) {
         if (size == 0) {
             items[firstIndex] = item;
@@ -53,6 +55,7 @@ public class ArrayDeque<T> {
         }
     }
 
+    @Override
     public T get(int index) {
         if (size == 0) {
             return null;
@@ -87,6 +90,7 @@ public class ArrayDeque<T> {
         length = capacity;
     }
 
+    @Override
     public T removeFirst() {
         T returnItem = items[firstIndex];
         if (size == 0) {
@@ -114,6 +118,7 @@ public class ArrayDeque<T> {
         return returnItem;
     }
 
+    @Override
     public T removeLast() {
         T returnItem = items[lastIndex];
         if (size == 0) {
@@ -141,18 +146,7 @@ public class ArrayDeque<T> {
         return returnItem;
     }
 
-    public int size() {
-        return size;
-    }
-
-    public boolean isEmpty() {
-        if (size == 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
+    @Override
     public void printDeque() {
         if (firstIndex <= lastIndex) {
             int index = firstIndex;
@@ -174,6 +168,7 @@ public class ArrayDeque<T> {
         }
     }
 
+    @Override
     public T getFirst() {
         if (size == 0) {
             return null;
@@ -182,12 +177,18 @@ public class ArrayDeque<T> {
         return items[firstIndex];
     }
 
+    @Override
     public T getLast() {
         if (size == 0) {
             return null;
         }
 
         return items[lastIndex];
+    }
+
+    @Override
+    public int size() {
+        return size;
     }
 
     /**@Override
