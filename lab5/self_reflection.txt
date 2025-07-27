@@ -8,24 +8,23 @@ A:
 
 Q: What's something you felt proud of in your code, if anything?
 
-A:
+A:I made the logic by myself, without help form AI.
 
 Q: What's something that was particularly inelegant in your code, if anything?
 
-A:
+A:I add a lot if-else statements.And actually, I can make it not too tedious, I should merge the two 'if statements' of 'if (length < capacity').
 
 Q: What did you learn by talking to your partner about writing ArrayDeque?
 
-A:
+A:nothing.
 
 Q: What do you wish you would have known before writing ArrayDeque, if anything?
 
-A:
+A:How to implement Deque, I know it for long time age, and I felt it was mysterious.
 
 Q: If you wrote ArrayDeque again, what would you do differently, if anything?
 
-A:
-
+A:rewrite my resize() method with a better logic.
 -----
 
 LinkedListDeque:
@@ -36,23 +35,23 @@ A:
 
 Q: What's something you felt proud of in your code, if anything?
 
-A:
+A:I wirte remove() method which can remove any items in the list.
 
 Q: What's something that was particularly inelegant in your code, if anything?
 
-A:
+A:I think my test file is not professional.
 
 Q: What did you learn by talking to your partner about writing LinkedListDeque?
 
-A:
+A:nothing
 
 Q: What do you wish you would have known before writing LinkedListDeque, if anything?
 
-A:
+A:How to implement sentinel, and should I add it as my first Node.
 
 Q: If you wrote LinkedListDeque again, what would you do differently, if anything?
 
-A:
+A:Add more note to mt code.
 
 -----
 
@@ -60,4 +59,4 @@ Meta:
 
 Q: Did you like this design review process? Anything we should do differently next time?
 
-A: 
+A: yes
