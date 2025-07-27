@@ -73,13 +73,8 @@ public class ArrayDeque<T> implements Deque<T> {
         if (items[0] != null) {
             System.arraycopy(items, 0, a, 0, lastIndex + 1);
             if (firstIndex != 0) {
-                if (length < capacity) {
-                    System.arraycopy(items, lastIndex + 1, a, capacity - (size - firstIndex), size - firstIndex);
-                    firstIndex = capacity - (size - firstIndex);
-                } else {
-                    System.arraycopy(items, firstIndex, a, capacity - (length - firstIndex), length - firstIndex);
-                    firstIndex = capacity - (length - firstIndex);
-                }
+                System.arraycopy(items, firstIndex, a, capacity - (length - firstIndex), length - firstIndex);
+                firstIndex = capacity - (length - firstIndex);
             }
         } else {
             System.arraycopy(items, firstIndex, a, 0, lastIndex - firstIndex + 1);
