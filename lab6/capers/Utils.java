@@ -4,7 +4,6 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -12,11 +11,7 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.Formatter;
-import java.util.List;
+import java.nio.file.StandardOpenOption;
 
 
 /** Assorted utilities.
@@ -44,6 +39,10 @@ class Utils {
      *  be a normal file.  Throws IllegalArgumentException
      *  in case of problems. */
     static String readContentsAsString(File file) {
+        // System.out.println("can read");
+        // System.out.println("文件是否存在: " + file.exists());
+        // System.out.println("绝对路径: " + file.getAbsolutePath());
+
         return new String(readContents(file), StandardCharsets.UTF_8);
     }
 
@@ -51,18 +50,47 @@ class Utils {
      *  creating or overwriting it as needed.  Each object in CONTENTS may be
      *  either a String or a byte array.  Throws IllegalArgumentException
      *  in case of problems. */
+    static void rewriteContents(File file, Object... contents) {
+        try {
+            if (file.isDirectory()) {
+                throw
+                        new IllegalArgumentException("cannot overwrite directory");
+            }
+            // 关键修改
+            BufferedOutputStream str =
+                    new BufferedOutputStream(Files.newOutputStream(file.toPath()));  // 覆盖模式
+            // only for object
+            for (Object obj : contents) {
+                str.write((byte[]) obj);
+            }
+            str.close();
+        } catch (IOException | ClassCastException excp) {
+            throw new IllegalArgumentException(excp.getMessage());
+        }
+    }
+
     static void writeContents(File file, Object... contents) {
         try {
             if (file.isDirectory()) {
                 throw
                         new IllegalArgumentException("cannot overwrite directory");
             }
-            BufferedOutputStream str =
-                    new BufferedOutputStream(Files.newOutputStream(file.toPath()));
+            // 关键修改：添加 APPEND 选项
+            BufferedOutputStream str = new BufferedOutputStream(
+                    Files.newOutputStream(
+                            file.toPath(),
+                            StandardOpenOption.CREATE,
+                            StandardOpenOption.APPEND  // 追加模式
+                    )
+            );
             for (Object obj : contents) {
                 if (obj instanceof byte[]) {
+                    //System.out.println("byte");
+
                     str.write((byte[]) obj);
                 } else {
+                    //System.out.println("string");
+
                     str.write(((String) obj).getBytes(StandardCharsets.UTF_8));
                 }
             }
@@ -93,18 +121,22 @@ class Utils {
         writeContents(file, serialize(obj));
     }
 
+    static void rewriteObject(File file, Serializable obj) {
+        rewriteContents(file, serialize(obj));
+    }
+
 
     /* OTHER FILE UTILITIES */
 
     /** Return the concatentation of FIRST and OTHERS into a File designator,
-     *  analogous to the {@link java.nio.file.Paths.#get(String, String[])}
+     *  analogous to the {@link //java.nio.file.Paths.#get(String, String[])}
      *  method. */
     static File join(String first, String... others) {
         return Paths.get(first, others).toFile();
     }
 
     /** Return the concatentation of FIRST and OTHERS into a File designator,
-     *  analogous to the {@link java.nio.file.Paths.#get(String, String[])}
+     *  analogous to the {@link //java.nio.file.Paths.#get(String, String[])}
      *  method. */
     static File join(File first, String... others) {
         return Paths.get(first.getPath(), others).toFile();
@@ -150,5 +182,4 @@ class Utils {
     static RuntimeException error(String msg, Object... args) {
         return new RuntimeException(String.format(msg, args));
     }
-
 }
