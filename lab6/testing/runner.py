@@ -441,8 +441,7 @@ if __name__ == "__main__":
                 DEBUG = True
                 TIMEOUT = 100000
         if lib_dir is None:
-            lib_dir = join(abspath(environ['REPO_DIR']),
-                           "library-sp21/javalib")
+            lib_dir = join("/Users/li/cs/cs61B/cs61b/library-sp21", "javalib")
         else:
             lib_dir = join(abspath(getcwd()), abspath(lib_dir))
     except GetoptError:
