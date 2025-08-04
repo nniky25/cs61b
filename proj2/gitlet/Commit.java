@@ -2,8 +2,12 @@ package gitlet;
 
 // TODO: any imports you need here
 import Deque.ArrayDeque;
+
+import java.io.Serializable;
 import java.util.*;
- // TODO: You'll likely use this in this class
+
+import static gitlet.Utils.*;
+// TODO: You'll likely use this in this class
 
 /** Represents a gitlet commit object.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -11,7 +15,7 @@ import java.util.*;
  *
  *  @author TODO
  */
-public class Commit {
+public class Commit implements Serializable {
     /**
      * TODO: add instance variables here.
      *
@@ -24,8 +28,7 @@ public class Commit {
     private String date;
     public String parentHash;
     private String message;
-    private ArrayDeque<String> fileWithBlob;
-    public Map<String, String> Blob;
+    private Map<String, String> Blob;
 
     /* Implement Constructor */
     // With date
@@ -33,7 +36,21 @@ public class Commit {
         this.date = date;
         this.message = message;
         this.parentHash = parentHash;
-        fileWithBlob = new ArrayDeque<String> ();
+    }
+
+    public Map getMap() {
+        Blob = new HashMap<>();
+        return Blob;
+    }
+
+    public boolean compare(String fileName, String contentHash) {
+        boolean hasKey = getMap().containsKey("apple");
+        if (!hasKey) {
+            error("There are no " + fileName + " key in this commit");
+            System.exit(0);
+        }
+        String content = getMap().get(fileName).toString();
+        return content.equals(contentHash);
     }
 
     public String getdate() {
