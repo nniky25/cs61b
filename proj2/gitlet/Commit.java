@@ -1,8 +1,9 @@
 package gitlet;
 
 // TODO: any imports you need here
-
-import java.util.Date; // TODO: You'll likely use this in this class
+import Deque.ArrayDeque;
+import java.util.*;
+ // TODO: You'll likely use this in this class
 
 /** Represents a gitlet commit object.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -20,7 +21,37 @@ public class Commit {
      */
 
     /** The message of this Commit. */
+    private String date;
+    public String parentHash;
     private String message;
+    private ArrayDeque<String> fileWithBlob;
+    public Map<String, String> Blob;
 
-    /* TODO: fill in the rest of this class. */
+    /* Implement Constructor */
+    // With date
+    public Commit(String message, String date, String parentHash) {
+        this.date = date;
+        this.message = message;
+        this.parentHash = parentHash;
+        fileWithBlob = new ArrayDeque<String> ();
+    }
+
+    public String getdate() {
+        return date;
+    }
+
+    public String getparentHash() {
+        return parentHash;
+    }
+
+    public String getmessage() {
+        return message;
+    }
+
+
+
+
+    /**public static void main(String[] args) {
+        new Commit();
+    }*/
 }
