@@ -108,4 +108,13 @@ public class Repository implements Serializable {
             writeContents(STAGING, Area);
         }
     }
+
+    public void commit(String message) {
+        if (!GITLET_DIR.exists()) {
+            System.exit(0);
+        }
+        String headHash = readContentsAsString(HEAD);
+        String currentDate = new Date().toString();
+        Commit currentCommit = new Commit(message, currentDate, headHash);
+    }
 }

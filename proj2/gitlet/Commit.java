@@ -1,7 +1,6 @@
 package gitlet;
 
 // TODO: any imports you need here
-import Deque.ArrayDeque;
 
 import java.io.Serializable;
 import java.util.*;
@@ -23,14 +22,13 @@ public class Commit implements Serializable {
      * comment above them describing what that variable represents and how that
      * variable is used. We've provided one example for `message`.
      */
-
-    /** The message of this Commit. */
-    private String date;
-    public String parentHash;
-    private String message;
+    /** The date, parentHash, message, Blob of this Commit. */
+    private final String date;
+    public final String parentHash;
+    private final String message;
     private Map<String, String> Blob;
 
-    /* Implement Constructor */
+    /** Implement Constructor */
     // With date
     public Commit(String message, String date, String parentHash) {
         this.date = date;
@@ -64,11 +62,4 @@ public class Commit implements Serializable {
     public String getmessage() {
         return message;
     }
-
-
-
-
-    /**public static void main(String[] args) {
-        new Commit();
-    }*/
 }
