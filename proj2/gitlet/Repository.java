@@ -70,6 +70,10 @@ public class Repository implements Serializable {
         // Save new commit to COMMIT directory.
         updateCommit(init);
 
+        // Set Area Object to STAGING file.
+        StagingArea Area = new StagingArea();
+        writeObject(STAGING, Area);
+
         // Set current branch
         writeContents(BRANCH, "master");
     }

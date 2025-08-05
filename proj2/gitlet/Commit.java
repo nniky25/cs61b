@@ -45,7 +45,7 @@ public class Commit implements Serializable {
         return content.equals(contentHash);
     }
 
-    public Map getMap() {
+    public Map<String, String> getMap() {
         return table;
     }
 
