@@ -63,8 +63,7 @@ public class Repository implements Serializable {
             if (!HEAD.createNewFile()) throw new IOException("fail to create" + HEAD.getAbsolutePath());
             if (!BRANCH.createNewFile()) throw new IOException("fail to create" + BRANCH.getAbsolutePath());
         }
-
-        why write commit hash
+        
         Commit init = new Commit("initial commit", "00:00:00 UTC, Thursday, 1 January 1970", null);
         // Serialized commit to byte.
         byte[] serializedData = serialize(init);
@@ -84,9 +83,13 @@ public class Repository implements Serializable {
             Utils.error("File does not exist.");
             System.exit(0);
         }
+        // Read File content as byte.
+        byte[] fileContent = readContents(currentFile);
 
-        byte[] fileByte = serialize(currentFile);
-        String fileHash = sha1(currentFile);
+
+        // serialized fileContent and get hash.
+        byte[] fileByte = serialize(fileContent);
+        String fileHash = sha1(fileContent);
         // Update
         if (!STAGING.exists()) {
             if (!STAGING.createNewFile()) throw new IOException("fail to create" + STAGING.getAbsolutePath());
