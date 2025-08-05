@@ -26,7 +26,7 @@ public class Commit implements Serializable {
     private final String date;
     public final String parentHash;
     private final String message;
-    private Map<String, String> Blob;
+    private Map<String, String> table;
 
     /** Implement Constructor */
     // With date
@@ -37,8 +37,8 @@ public class Commit implements Serializable {
     }
 
     public Map getMap() {
-        Blob = new HashMap<>();
-        return Blob;
+        table = new HashMap<>();
+        return table;
     }
 
     public boolean compare(String fileName, String contentHash) {

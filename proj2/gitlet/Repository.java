@@ -34,6 +34,8 @@ public class Repository implements Serializable {
     public static final File GITLET_DIR = join(CWD, ".gitlet");
     /** The commit directory. */
     public static final File COMMIT = join(GITLET_DIR, "commit");
+    /** The blob directory. */
+    public static final File BLOB = join(GITLET_DIR, "blob");
     /** The head file. */
     public static final File HEAD = join(GITLET_DIR, "head");
     /** The current branch file. */
@@ -46,6 +48,7 @@ public class Repository implements Serializable {
     /** Full construct (basic) .gitlet/ -- top level for all persistent data.
      *              (other) - split/branchName/ -- director containing the branch split
      *              (basic) - commit/ -- director containing the Commit List.
+     *              (basic) - blob/ -- director containing the Blobs of fileHash.
      *              (basic) - head -- file containing the head commit.
      *              (basic) - branch -- file containing current branch.
      *              (other) - staging -- file containing the Staging Area.*/
@@ -56,17 +59,20 @@ public class Repository implements Serializable {
         if (!GITLET_DIR.exists()) {
             if (!GITLET_DIR.mkdir()) throw new IOException("fail to mkdir" + GITLET_DIR.getAbsolutePath());
             if (!COMMIT.mkdir()) throw new IOException("fail to mkdir" + COMMIT.getAbsolutePath());
+            if (!BLOB.mkdir()) throw new IOException("fail to mkdir" + BLOB.getAbsolutePath());
             if (!HEAD.createNewFile()) throw new IOException("fail to create" + HEAD.getAbsolutePath());
             if (!BRANCH.createNewFile()) throw new IOException("fail to create" + BRANCH.getAbsolutePath());
         }
 
+        why write commit hash
         Commit init = new Commit("initial commit", "00:00:00 UTC, Thursday, 1 January 1970", null);
+        // Serialized commit to byte.
+        byte[] serializedData = serialize(init);
         // Hashable commit to hash.
-        String commitHash = sha1(init);
+        String commitHash = sha1(serializedData);
         // Store init commit hash to HEAD and COMMIT.
         writeContents(HEAD, commitHash);
         writeContents(COMMIT, commitHash);
-
         // Set current branch
         writeContents(BRANCH, "master");
     }
@@ -79,34 +85,51 @@ public class Repository implements Serializable {
             System.exit(0);
         }
 
-        String fileHash = sha1(fileName);
+        byte[] fileByte = serialize(currentFile);
+        String fileHash = sha1(currentFile);
         // Update
         if (!STAGING.exists()) {
             if (!STAGING.createNewFile()) throw new IOException("fail to create" + STAGING.getAbsolutePath());
             /* Copy file to Staged for addition area if changed. */
-            updateArea(fileName, fileHash, Area);
+            updateArea(fileName, fileHash, Area, fileByte);
         } else {
             StagingArea currentArea = readObject(STAGING, StagingArea.class);
-            updateArea(fileName, fileHash, currentArea);
+            updateArea(fileName, fileHash, currentArea, fileByte);
         }
     }
 
-    /** Check and update STAGING file. */
-    private static void updateArea(String fileName, String fileHash, StagingArea currentArea) {
-        // Check
+    /** Check, then update STAGING file and add new blob to BLOB directory. */
+    private static void updateArea(String fileName, String fileHash, StagingArea currentArea, byte[] fileByte) throws IOException {
+        /* Check the fileName if was added to headCommit and if the same content if added. */
         Commit headCommit = readObject(HEAD, Commit.class);
         boolean hasKey = headCommit.getMap().containsKey(fileName);
+
         if (hasKey) {
+            // The fileName was added to headCommit before.
+            /*   If content is different, add, else don't. */
             if (!headCommit.compare(fileName, fileHash)) {
-                // Add to Area
+                // -> Update Area
                 currentArea.updateAdd(fileName, fileHash);
-                writeContents(STAGING, Area);
+                writeObject(STAGING, currentArea);
+
+                // -> Add Blob
+                updateBlob(fileHash, fileByte);
+
+                //System.out.println("the first time add file");
             }
+
         } else {
-            // Add to Area
+            // The fileName didn't be added to headCommit before.
+            // -> Update Area
             currentArea.updateAdd(fileName, fileHash);
-            writeContents(STAGING, Area);
+            writeObject(STAGING, currentArea);
+
+            // -> Add Blob
+            updateBlob(fileHash, fileByte);
+
+            //System.out.println("add file");
         }
+        //System.out.println("nothing add");
     }
 
     public void commit(String message) {
@@ -116,5 +139,13 @@ public class Repository implements Serializable {
         String headHash = readContentsAsString(HEAD);
         String currentDate = new Date().toString();
         Commit currentCommit = new Commit(message, currentDate, headHash);
+    }
+
+    /** Add new Blob to BLOB directory. */
+    public static void updateBlob(String fileHash, byte[] fileByte) throws IOException {
+        File newBlob = join(BLOB, fileHash);
+        if (!newBlob.createNewFile()) throw new IOException("fail to create" + newBlob.getAbsolutePath());
+        Blob currentBlob = new Blob(fileByte);
+        writeObject(newBlob, (Serializable) currentBlob);
     }
 }
