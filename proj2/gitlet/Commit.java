@@ -23,22 +23,16 @@ public class Commit implements Serializable {
      * variable is used. We've provided one example for `message`.
      */
     /** The date, parentHash, message, Blob of this Commit. */
-    private final String date;
-    public final String parentHash;
-    private final String message;
-    private Map<String, String> table;
+    private  String date;
+    public  String parentHash;
+    private  String message;
+    private Map<String, String> table = new HashMap<>();
 
     /** Implement Constructor */
-    // With date
     public Commit(String message, String date, String parentHash) {
         this.date = date;
         this.message = message;
         this.parentHash = parentHash;
-    }
-
-    public Map getMap() {
-        table = new HashMap<>();
-        return table;
     }
 
     public boolean compare(String fileName, String contentHash) {
@@ -51,15 +45,31 @@ public class Commit implements Serializable {
         return content.equals(contentHash);
     }
 
-    public String getdate() {
+    public Map getMap() {
+        return table;
+    }
+
+    public String getDate() {
         return date;
     }
 
-    public String getparentHash() {
+    public String getParentHash() {
         return parentHash;
     }
 
-    public String getmessage() {
+    public String getMessage() {
         return message;
+    }
+
+    public void changeDate(String currentDate) {
+        this.date = currentDate;
+    }
+
+    public void changeParentHash(String currentHash) {
+        this.parentHash = currentHash;
+    }
+
+    public void changeMessage(String currentMessage) {
+        this.message = currentMessage;
     }
 }

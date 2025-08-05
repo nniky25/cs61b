@@ -26,7 +26,7 @@ public class Repository implements Serializable {
      */
     private String branch = "master";
     private String otherBranch;
-    private static StagingArea Area = new StagingArea();
+    //private static StagingArea Area = new StagingArea();
 
     /** The current working directory. */
     public static final File CWD = new File(System.getProperty("user.dir"));
@@ -62,16 +62,14 @@ public class Repository implements Serializable {
             if (!BLOB.mkdir()) throw new IOException("fail to mkdir" + BLOB.getAbsolutePath());
             if (!HEAD.createNewFile()) throw new IOException("fail to create" + HEAD.getAbsolutePath());
             if (!BRANCH.createNewFile()) throw new IOException("fail to create" + BRANCH.getAbsolutePath());
+            if (!STAGING.createNewFile()) throw new IOException("fail to create" + STAGING.getAbsolutePath());
         }
-        
+
         Commit init = new Commit("initial commit", "00:00:00 UTC, Thursday, 1 January 1970", null);
-        // Serialized commit to byte.
-        byte[] serializedData = serialize(init);
-        // Hashable commit to hash.
-        String commitHash = sha1(serializedData);
-        // Store init commit hash to HEAD and COMMIT.
-        writeContents(HEAD, commitHash);
-        writeContents(COMMIT, commitHash);
+
+        // Save new commit to COMMIT directory.
+        updateCommit(init);
+
         // Set current branch
         writeContents(BRANCH, "master");
     }
@@ -86,19 +84,13 @@ public class Repository implements Serializable {
         // Read File content as byte.
         byte[] fileContent = readContents(currentFile);
 
-
         // serialized fileContent and get hash.
         byte[] fileByte = serialize(fileContent);
         String fileHash = sha1(fileContent);
         // Update
-        if (!STAGING.exists()) {
-            if (!STAGING.createNewFile()) throw new IOException("fail to create" + STAGING.getAbsolutePath());
-            /* Copy file to Staged for addition area if changed. */
-            updateArea(fileName, fileHash, Area, fileByte);
-        } else {
-            StagingArea currentArea = readObject(STAGING, StagingArea.class);
-            updateArea(fileName, fileHash, currentArea, fileByte);
-        }
+        StagingArea Area = readObject(STAGING, StagingArea.class);
+        /* Copy file to Staged for addition area if changed. */
+        updateArea(fileName, fileHash, Area, fileByte);
     }
 
     /** Check, then update STAGING file and add new blob to BLOB directory. */
@@ -120,7 +112,6 @@ public class Repository implements Serializable {
 
                 //System.out.println("the first time add file");
             }
-
         } else {
             // The fileName didn't be added to headCommit before.
             // -> Update Area
@@ -135,13 +126,63 @@ public class Repository implements Serializable {
         //System.out.println("nothing add");
     }
 
-    public void commit(String message) {
+    public void commit(String message) throws IOException {
+
+        boolean changedTable = false;
+
         if (!GITLET_DIR.exists()) {
             System.exit(0);
         }
+        // Get head commit Object.
         String headHash = readContentsAsString(HEAD);
         String currentDate = new Date().toString();
-        Commit currentCommit = new Commit(message, currentDate, headHash);
+        File headCommit = join(COMMIT, headHash);
+        if (!headCommit.exists()) {
+            error("Head commit file doesn't exist.");
+            System.exit(0);
+        }
+
+        Commit currentCommit = readObject(headCommit, Commit.class);
+
+        // Get staging Area
+        StagingArea Area = readObject(STAGING, StagingArea.class);
+        Map<String, String> stagedAdd = Area.getStagedAdd();
+        Map<String, String> stagedRem = Area.getStagedRem();
+
+
+        /* Update current commit Object. */
+        currentCommit.changeDate(currentDate);
+        currentCommit.changeMessage(message);
+        currentCommit.changeParentHash(headHash);
+        Map<String, String> currentCommitMap = currentCommit.getMap();
+        // Add to table
+        if (!stagedAdd.isEmpty()) {
+            for (Map.Entry<String, String> entry : stagedAdd.entrySet()) { // 遍历
+                String key = entry.getKey();
+                String value = entry.getValue();
+                currentCommitMap.put(key, value);
+            }
+            changedTable = true;
+        }
+
+        // Remove from table
+        if (!stagedRem.isEmpty()) {
+            for (Map.Entry<String, String> entry : stagedRem.entrySet()) { // 遍历
+                String key = entry.getKey();
+                String value = entry.getValue();
+                currentCommitMap.remove(key, value);
+            }
+            changedTable = true;
+        }
+
+        // Clear Area
+        Area.clearStagingArea();
+        // Write Area and commit.
+        writeObject(STAGING, Area);
+        if (changedTable) {
+            // Save new commit to COMMIT directory.
+            updateCommit(currentCommit);
+        }
     }
 
     /** Add new Blob to BLOB directory. */
@@ -150,5 +191,22 @@ public class Repository implements Serializable {
         if (!newBlob.createNewFile()) throw new IOException("fail to create" + newBlob.getAbsolutePath());
         Blob currentBlob = new Blob(fileByte);
         writeObject(newBlob, (Serializable) currentBlob);
+    }
+
+    public static void updateCommit(Commit currentCommit) throws IOException {
+        // Serialized commit to byte.
+        byte[] serializedData = serialize(currentCommit);
+        // Hashable commit to hash.
+        String commitHash = sha1(serializedData);
+
+        /* Store init commit hash to HEAD file and COMMIT directory. */
+        writeContents(HEAD, commitHash);
+
+        // Create initCommit file which named commitHash under COMMIT directory.
+        File initCommit = join(COMMIT, commitHash);
+        if (!initCommit.createNewFile()) throw new IOException("fail to create" + initCommit.getAbsolutePath());
+
+        // Write commit into commitHash file.
+        writeObject(initCommit, currentCommit);
     }
 }
