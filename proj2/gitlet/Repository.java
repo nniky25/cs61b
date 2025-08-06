@@ -114,6 +114,9 @@ public class Repository implements Serializable {
         if (hasKey) {
             // The fileName was added to headCommit before.
             /*   If content is different, add, else don't. */
+
+            System.out.println("added before" + fileName + ":" + fileHash);
+
             if (!headCommit.compare(fileName, fileHash)) {
                 // -> Update Area
                 currentArea.updateAdd(fileName, fileHash);
@@ -127,6 +130,9 @@ public class Repository implements Serializable {
         } else {
             // The fileName didn't be added to headCommit before.
             // -> Update Area
+
+            System.out.println("didn't add before" + fileName + ":" + fileHash);
+
             currentArea.updateAdd(fileName, fileHash);
             writeObject(STAGING, currentArea);
 
@@ -174,6 +180,9 @@ public class Repository implements Serializable {
                 String key = entry.getKey();
                 String value = entry.getValue();
                 currentCommitMap.put(key, value);
+
+                System.out.println("add file from stage to commit");
+
             }
             changedTable = true;
         }
@@ -184,6 +193,9 @@ public class Repository implements Serializable {
                 String key = entry.getKey();
                 String value = entry.getValue();
                 currentCommitMap.remove(key, value);
+
+                System.out.println("delete file from stage to commit");
+
             }
             changedTable = true;
         }
@@ -194,6 +206,9 @@ public class Repository implements Serializable {
         writeObject(STAGING, Area);
         if (changedTable) {
             // Save new commit to COMMIT directory.
+
+            System.out.println("the commit changed.");
+
             updateCommit(currentCommit);
         }
     }
@@ -203,7 +218,7 @@ public class Repository implements Serializable {
         File newBlob = join(BLOB, fileHash);
         if (!newBlob.createNewFile()) throw new IOException("fail to create" + newBlob.getAbsolutePath());
         Blob currentBlob = new Blob(fileByte);
-        writeObject(newBlob, (Serializable) currentBlob);
+        writeObject(newBlob, /*(Serializable)*/ currentBlob);
     }
 
     /** Add new Commit to Commit directory. */
@@ -215,6 +230,8 @@ public class Repository implements Serializable {
 
         /* Store init commit hash to HEAD file and COMMIT directory. */
         writeContents(HEAD, commitHash);
+
+        System.out.println("change head.");
 
         // Create initCommit file which named commitHash under COMMIT directory.
         File initCommit = join(COMMIT, commitHash);

@@ -26,12 +26,20 @@ public class Main {
                     Utils.error("Please enter a file.");
                     System.exit(0);
                 }
+                if (args.length > 2) {
+                    Utils.error("Wrong args length.");
+                    System.exit(0);
+                }
                 String fileName = args[1];
                 Repository.add(fileName);
                 break;
             case "commit":
                 if (args.length == 1) {
                     Utils.error("Please enter a message.");
+                    System.exit(0);
+                }
+                if (args.length > 2) {
+                    Utils.error("Wrong args length.");
                     System.exit(0);
                 }
                 String message = args[1];
