@@ -1,7 +1,9 @@
 package gitlet;
 
+import java.io.Serializable;
+
 /** to Store content. */
-public class Blob {
+public class Blob implements Serializable {
     private byte[] BContent;
 
 

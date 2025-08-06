@@ -34,7 +34,7 @@ public class Main {
                     Utils.error("Please enter a message.");
                     System.exit(0);
                 }
-                String message = args[2];
+                String message = args[1];
                 Repository.commit(message);
                 break;
             // TODO: FILL THE REST IN
