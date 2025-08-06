@@ -35,8 +35,8 @@ public class Main {
                     System.exit(0);
                 }
                 String message = args[2];
-
-
+                Repository.commit(message);
+                break;
             // TODO: FILL THE REST IN
         }
     }

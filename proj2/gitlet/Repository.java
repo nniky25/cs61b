@@ -78,6 +78,7 @@ public class Repository implements Serializable {
         writeContents(BRANCH, "master");
     }
 
+    /** Do add. */
     public static void add(String fileName) throws IOException {
         //Check Whether the file exists.
         File currentFile = join(CWD, fileName);
@@ -100,9 +101,16 @@ public class Repository implements Serializable {
     /** Check, then update STAGING file and add new blob to BLOB directory. */
     private static void updateArea(String fileName, String fileHash, StagingArea currentArea, byte[] fileByte) throws IOException {
         /* Check the fileName if was added to headCommit and if the same content if added. */
-        Commit headCommit = readObject(HEAD, Commit.class);
-        boolean hasKey = headCommit.getMap().containsKey(fileName);
+        // Get headCommit Object.
+        String headHash = readContentsAsString(HEAD);
+        File headFile = join(COMMIT, headHash);
+        if (!headFile.exists()) {
+            error("There is no headFile under COMMIT.");
+        }
+        Commit headCommit = readObject(headFile, Commit.class);
 
+        // Check
+        boolean hasKey = headCommit.getMap().containsKey(fileName);
         if (hasKey) {
             // The fileName was added to headCommit before.
             /*   If content is different, add, else don't. */
@@ -130,7 +138,8 @@ public class Repository implements Serializable {
         //System.out.println("nothing add");
     }
 
-    public void commit(String message) throws IOException {
+    /** Do commit and clear Area. */
+    public static void commit(String message) throws IOException {
 
         boolean changedTable = false;
 
@@ -197,6 +206,7 @@ public class Repository implements Serializable {
         writeObject(newBlob, (Serializable) currentBlob);
     }
 
+    /** Add new Commit to Commit directory. */
     public static void updateCommit(Commit currentCommit) throws IOException {
         // Serialized commit to byte.
         byte[] serializedData = serialize(currentCommit);
