@@ -30,8 +30,8 @@ public class Main {
                     Utils.error("Wrong args length.");
                     System.exit(0);
                 }
-                String fileName = args[1];
-                Repository.add(fileName);
+                String adFileName = args[1];
+                Repository.add(adFileName);
                 break;
             case "commit":
                 if (args.length == 1) {
@@ -45,6 +45,16 @@ public class Main {
                 String message = args[1];
                 Repository.commit(message);
                 break;
+            case "rm":
+                if (args.length == 1) {
+                    Utils.error("Please enter a file name.");
+                    System.exit(0);
+                }
+                if (args.length > 2) {
+                    Utils.error("Wrong args length");
+                }
+                String rmFileName = args[1];
+
             // TODO: FILL THE REST IN
         }
     }

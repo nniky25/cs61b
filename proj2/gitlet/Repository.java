@@ -47,9 +47,9 @@ public class Repository implements Serializable {
     /* TODO: fill in the rest of this class. */
     /** Full construct (basic) .gitlet/ -- top level for all persistent data.
      *              (other) - split/branchName/ -- director containing the branch split
-     *              (basic) - commit/ -- director containing the Commit List.
+     *              (basic) - commit/ -- director containing the Commit hash files.
      *              (basic) - blob/ -- director containing the Blobs of fileHash.
-     *              (basic) - head -- file containing the head commit.
+     *              (basic) - head -- file containing the head commit hash.
      *              (basic) - branch -- file containing current branch.
      *              (other) - staging -- file containing the Staging Area.*/
     /** Set StagingArea. */
@@ -92,6 +92,9 @@ public class Repository implements Serializable {
         // serialized fileContent and get hash.
         byte[] fileByte = serialize(fileContent);
         String fileHash = sha1(fileContent);
+
+        System.out.println(fileName + ": " + fileHash);
+
         // Update
         StagingArea Area = readObject(STAGING, StagingArea.class);
         /* Copy file to Staged for addition area if changed. */
@@ -152,16 +155,12 @@ public class Repository implements Serializable {
         if (!GITLET_DIR.exists()) {
             System.exit(0);
         }
-        // Get head commit Object.
+        // Get head commit object and head commit hash.
+        Commit currentCommit = getHeadCommit();
         String headHash = readContentsAsString(HEAD);
-        String currentDate = new Date().toString();
-        File headCommit = join(COMMIT, headHash);
-        if (!headCommit.exists()) {
-            error("Head commit file doesn't exist.");
-            System.exit(0);
-        }
 
-        Commit currentCommit = readObject(headCommit, Commit.class);
+        // New date
+        String currentDate = new Date().toString();
 
         // Get staging Area
         StagingArea Area = readObject(STAGING, StagingArea.class);
@@ -174,8 +173,12 @@ public class Repository implements Serializable {
         currentCommit.changeMessage(message);
         currentCommit.changeParentHash(headHash);
         Map<String, String> currentCommitMap = currentCommit.getMap();
+
         // Add to table
         if (!stagedAdd.isEmpty()) {
+
+            System.out.println("Stage is not empty.");
+
             for (Map.Entry<String, String> entry : stagedAdd.entrySet()) { // 遍历
                 String key = entry.getKey();
                 String value = entry.getValue();
@@ -199,6 +202,8 @@ public class Repository implements Serializable {
             }
             changedTable = true;
         }
+
+        System.out.println("stage is empty.");
 
         // Clear Area
         Area.clearStagingArea();
@@ -239,5 +244,71 @@ public class Repository implements Serializable {
 
         // Write commit into commitHash file.
         writeObject(initCommit, currentCommit);
+    }
+
+    /** Remove the file if it is in add staged area; If it's not, check whether it was in head
+     *  commit, if it was, add it to remove staged area, remove it from Commit Object when next
+     *  commit, and remove the file from the working directory if the user has not already
+     *  done so (do not remove it unless it is tracked in the current commit).
+     */
+    public static void rm(String rmFileName) {
+        File fileName = join(CWD, rmFileName);
+
+        /* Check Whether it is in add and remove staged area. */
+        // Get Area
+        StagingArea Area = readObject(STAGING, StagingArea.class);
+        Map<String, String> stagedAdd = Area.getStagedAdd();
+        Map<String, String> stagedRem = Area.getStagedRem();
+
+        boolean hasKeyInAdd = stagedAdd.containsKey(rmFileName);
+        boolean hadKeyInRem = stagedRem.containsKey(rmFileName);
+
+        // Remove the file if it in Add Staged Area.
+        if (hasKeyInAdd) {
+            stagedAdd.remove(rmFileName);
+
+            System.out.println("the file" + rmFileName + "in add staged area, and remove it successfully.");
+
+        }
+
+        // Add the file to Remove Staged Area if it is in Head Commit, and delect it.
+        Commit headCommit = getHeadCommit();
+        boolean hasKey = headCommit.getMap().containsKey(rmFileName);
+        if (hasKey) {
+
+            System.out.println("the file " + rmFileName + " in head commit");
+
+            if (!hadKeyInRem) {
+                stagedRem.put(rmFileName, null);
+
+                System.out.println("add file " + rmFileName + " in remove staged area.");
+
+                if (fileName.exists()){
+                    boolean success = restrictedDelete(fileName);
+
+                    System.out.println("remove file " + rmFileName + " from working directory");
+
+                    if (!success) {
+                        error("Fail to Delete" + fileName);
+                    }
+                }
+            }
+        }
+
+
+    }
+
+    public static Commit getHeadCommit() {
+        // Read head hash form HEAD
+        String headHash = readContentsAsString(HEAD);
+
+        // Get head commit object form COMMIT directory.
+        File headCommit = join(COMMIT, headHash);
+        if (!headCommit.exists()) {
+            error("Head commit file doesn't exist.");
+            System.exit(0);
+        }
+        Commit currentCommit = readObject(headCommit, Commit.class);
+        return currentCommit;
     }
 }

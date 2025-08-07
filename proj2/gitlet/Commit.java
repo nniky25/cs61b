@@ -36,7 +36,7 @@ public class Commit implements Serializable {
     }
 
     public boolean compare(String fileName, String contentHash) {
-        boolean hasKey = getMap().containsKey("apple");
+        boolean hasKey = getMap().containsKey(fileName);
         if (!hasKey) {
             error("There are no " + fileName + " key in this commit");
             System.exit(0);
