@@ -23,10 +23,11 @@ public class Commit implements Serializable {
      * variable is used. We've provided one example for `message`.
      */
     /** The date, parentHash1 is master, parentHash2 is main, message, Blob of this Commit. */
-    private  String date;
-    private  String parentHash1;
+    private String date;
+    private String parentHash1;
     private String parentHash2;
-    private  String message;
+    private String nextCommitHash;
+    private String message;
     private Map<String, String> table = new HashMap<>();
 
     /** Implement Constructor */
@@ -45,6 +46,14 @@ public class Commit implements Serializable {
         }
         String content = getMap().get(fileName).toString();
         return content.equals(contentHash);
+    }
+
+    public void addNextCommitHash(String commitHash) {
+        this.nextCommitHash = commitHash;
+    }
+
+    public String getNextCommitHash() {
+        return this.nextCommitHash;
     }
 
     public Map<String, String> getMap() {

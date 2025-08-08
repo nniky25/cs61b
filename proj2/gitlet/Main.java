@@ -78,7 +78,8 @@ public class Main {
                     Utils.error("Wrong args length.");
                     System.exit(0);
                 }
-
+                Repository.status();
+                break;
         }
     }
 }
