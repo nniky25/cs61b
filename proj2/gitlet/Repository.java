@@ -171,7 +171,7 @@ public class Repository implements Serializable {
         /* Update current commit Object. */
         currentCommit.changeDate(currentDate);
         currentCommit.changeMessage(message);
-        currentCommit.changeParentHash(headHash);
+        currentCommit.changeParentHash1(headHash);
         Map<String, String> currentCommitMap = currentCommit.getMap();
 
         // Add to table
@@ -294,10 +294,9 @@ public class Repository implements Serializable {
                 }
             }
         }
-
-
     }
 
+    /** Get the head commit object. */
     public static Commit getHeadCommit() {
         // Read head hash form HEAD
         String headHash = readContentsAsString(HEAD);
@@ -311,4 +310,73 @@ public class Repository implements Serializable {
         Commit currentCommit = readObject(headCommit, Commit.class);
         return currentCommit;
     }
+
+    public static void log() {
+        String headHash = readContentsAsString(HEAD);
+        String parentHash = printCommit(headHash);
+        while (parentHash != null) {
+            parentHash = printCommit(parentHash);
+        }
+    }
+
+    public static void globalLog() {
+        List<String> allCommits = plainFilenamesIn(COMMIT);
+        if (!allCommits.isEmpty()) {
+            for (String allCommit : allCommits) {
+                printCommit(allCommit);
+            }
+        }
+    }
+
+    public static void find(String message) {
+        boolean output = false;
+        List<String> allCommits = plainFilenamesIn(COMMIT);
+        if (!allCommits.isEmpty()) {
+            for (String allCommit : allCommits) {
+                File currentCommitFile = join(COMMIT, allCommit);
+                Commit currentCommit = readObject(currentCommitFile, Commit.class);
+                if (currentCommit.getMessage().equals(message)) {
+                    System.out.println(allCommit);
+                    output = true;
+                }
+            }
+        }
+
+        if(!output) {
+            error("Found no commit with that message.");
+        }
+    }
+
+    public static String printCommit(String fileName) {
+        File currentFile = join(COMMIT, fileName);
+        if (!currentFile.exists()) {
+            error("There is no " + fileName + ".");
+        }
+
+        Commit currentCommit = readObject(currentFile, Commit.class);
+        String date = currentCommit.getDate();
+        String parentHash1 = currentCommit.getParentHash1();
+        String parentHash2 = currentCommit.getParentHash2();
+        String message = currentCommit.getMessage();
+        if (parentHash2 == null) {
+            System.out.println("===");
+            System.out.println("commit " + fileName);
+            System.out.println("Date:" + date);
+            System.out.println(message);
+            System.out.println();
+        } else {
+            String first = parentHash1.substring(0, 7);
+            String second = parentHash2.substring(0, 7);
+
+            System.out.println("===");
+            System.out.println("commit " + fileName);
+            System.out.println("Merge: " + first + " " + second);
+            System.out.println("Date:" + date);
+            System.out.println("Merged development into master.");
+        }
+
+        return parentHash1;
+    }
+
+
 }
