@@ -24,15 +24,17 @@ public class Repository implements Serializable {
      * comment above them describing what that variable represents and how that
      * variable is used. We've provided two examples for you.
      */
-    private String branch = "master";
-    private String otherBranch;
-    private String currentbranch;
+    private static String branch = "master";
+    private static String otherBranch;
+    private static String currentbranch;
     //private static StagingArea Area = new StagingArea();
 
     /** The current working directory. */
     public static final File CWD = new File(System.getProperty("user.dir"));
     /** The .gitlet directory. */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
+    /** The split file. */
+    public static final File SPLIT = join(GITLET_DIR, "split");
     /** The commit directory. */
     public static final File COMMIT = join(GITLET_DIR, "commit");
     /** The blob directory. */
@@ -49,19 +51,20 @@ public class Repository implements Serializable {
 
     /* TODO: fill in the rest of this class. */
     /** Full construct (basic) .gitlet/ -- top level for all persistent data.
-     *              (other) - split/branchName/ -- director containing the branch split
+     *              (basic) - split -- file containing the branch split commit object.
      *              (basic) - commit/ -- director containing the Commit hash files.
      *              (basic) - blob/ -- director containing the Blobs of fileHash.
      *              (basic) - head -- file containing the head commit hash.
      *              (basic) - branch -- file containing current branch.
      *              (basic) - status -- fils containing status object.
-     *              (other) - staging -- file containing the Staging Area.*/
+     *              (basic) - staging -- file containing the Staging Area.*/
     /** Set StagingArea. */
 
     /** init basic construct. */
     public static void setupPersistence() throws IOException {
         if (!GITLET_DIR.exists()) {
             if (!GITLET_DIR.mkdir()) throw new IOException("fail to mkdir" + GITLET_DIR.getAbsolutePath());
+            if (!SPLIT.createNewFile()) throw new IOException("fail to create" + SPLIT.getAbsolutePath());
             if (!COMMIT.mkdir()) throw new IOException("fail to mkdir" + COMMIT.getAbsolutePath());
             if (!BLOB.mkdir()) throw new IOException("fail to mkdir" + BLOB.getAbsolutePath());
             if (!HEAD.createNewFile()) throw new IOException("fail to create" + HEAD.getAbsolutePath());
@@ -80,8 +83,8 @@ public class Repository implements Serializable {
         writeObject(STAGING, Area);
 
         // Set Status Object to STATUS file.
-        Status status = new Status("master");
-        status.addBranch("master");
+        Status status = new Status(branch);
+        status.addBranch(branch);
     }
 
     /** Do add. */
@@ -115,6 +118,7 @@ public class Repository implements Serializable {
         File headFile = join(COMMIT, headHash);
         if (!headFile.exists()) {
             error("There is no headFile under COMMIT.");
+            System.exit(0);
         }
         Commit headCommit = readObject(headFile, Commit.class);
 
@@ -324,6 +328,7 @@ public class Repository implements Serializable {
 
                     if (!success) {
                         error("Fail to Delete" + fileName);
+                        System.exit(0);
                     }
                 }
             }
@@ -378,6 +383,7 @@ public class Repository implements Serializable {
 
         if(!output) {
             error("Found no commit with that message.");
+            System.exit(0);
         }
     }
 
@@ -385,6 +391,7 @@ public class Repository implements Serializable {
         File currentFile = join(COMMIT, fileName);
         if (!currentFile.exists()) {
             error("There is no " + fileName + ".");
+            System.exit(0);
         }
 
         Commit currentCommit = readObject(currentFile, Commit.class);
@@ -446,5 +453,23 @@ public class Repository implements Serializable {
 
         System.out.println("=== Untracked Files ===");
         System.out.println();
+    }
+
+    public static void branch(String branch) {
+        Status status = readObject(STATUS, Status.class);
+        Set<String> branches = status.getBranches();
+
+        if (branches.size() == 2) {
+            error("Full branches.");
+            System.exit(0);
+        } else if (branches.contains(branch)) {
+            error("A branch with that name already exists.");
+            System.exit(0);
+        }
+
+        // Add new branch to status and update SPLIT.
+        branches.add(branch);
+        String headHash = readContentsAsString(HEAD);
+        writeContents(SPLIT, headHash);
     }
 }

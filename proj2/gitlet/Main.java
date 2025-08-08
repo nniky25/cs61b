@@ -80,6 +80,11 @@ public class Main {
                 }
                 Repository.status();
                 break;
+            case "branch":
+                correct("Please enter a new branch.", args);
+                String branch = args[1];
+                Repository.branch(branch);
+                break;
         }
     }
 }
