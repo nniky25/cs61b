@@ -85,6 +85,27 @@ public class Main {
                 String branch = args[1];
                 Repository.branch(branch);
                 break;
+            case "checkout":
+                String one = args[1];
+
+                //String three = args[3];
+                if (args.length == 1) {
+                    Utils.error("please enter check message.");
+                    System.exit(0);
+                }
+                if (args.length == 2) {
+                    String checkBranch = args[2];
+
+                }
+                if (args.length == 3) {
+                    if (one.equals("--")) {
+                        String checkFile = args[2];
+                        Repository.checkout1(checkFile);
+                    } else {
+                        Utils.error("second should be '--'. ");
+                    }
+                }
+                break;
         }
     }
 }

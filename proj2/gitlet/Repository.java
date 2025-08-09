@@ -111,11 +111,11 @@ public class Repository implements Serializable {
         // Update
         StagingArea Area = readObject(STAGING, StagingArea.class);
         /* Copy file to Staged for addition area if changed. */
-        updateArea(fileName, fileHash, Area, fileByte);
+        updateArea(fileName, fileHash, Area, fileContent);
     }
 
     /** Check, then update STAGING file and add new blob to BLOB directory. */
-    private static void updateArea(String fileName, String fileHash, StagingArea currentArea, byte[] fileByte) throws IOException {
+    private static void updateArea(String fileName, String fileHash, StagingArea currentArea, byte[] fileContent) throws IOException {
         /* Check the fileName if was added to headCommit and if the same content if added. */
         // Get headCommit Object and Status Object.
         String headHash = readContentsAsString(HEAD);
@@ -139,7 +139,7 @@ public class Repository implements Serializable {
                 writeObject(STAGING, currentArea);
 
                 // -> Add Blob
-                updateBlob(fileHash, fileByte);
+                updateBlob(fileHash, fileContent);
 
                 //System.out.println("the first time add file");
             }
@@ -153,7 +153,7 @@ public class Repository implements Serializable {
             writeObject(STAGING, currentArea);
 
             // -> Add Blob
-            updateBlob(fileHash, fileByte);
+            updateBlob(fileHash, fileContent);
 
             //System.out.println("add file");
         }
@@ -245,13 +245,13 @@ public class Repository implements Serializable {
     }
 
     /** Add new Blob to BLOB directory. */
-    public static void updateBlob(String fileHash, byte[] fileByte) throws IOException {
+    public static void updateBlob(String fileHash, byte[] fileContent) throws IOException {
         File newBlob = join(BLOB, fileHash);
         if (newBlob.exists()) {
             System.exit(0);
         }
         if (!newBlob.createNewFile()) throw new IOException("fail to create" + newBlob.getAbsolutePath());
-        Blob currentBlob = new Blob(fileByte);
+        Blob currentBlob = new Blob(fileContent);
         writeObject(newBlob, /*(Serializable)*/ currentBlob);
     }
 
@@ -483,4 +483,50 @@ public class Repository implements Serializable {
         String headHash = readContentsAsString(HEAD);
         writeContents(SPLIT, headHash);
     }
+
+    public static void checkout1(String fileName) throws IOException {
+
+        System.out.println("checkout file");
+
+        // Get head commit.
+        Commit headCommit = getHeadCommit();
+        // Check whether the file exists in head commit.
+        boolean hasKey = headCommit.getMap().containsKey(fileName);
+        if (!hasKey) {
+            error("File does not exist in that commit.");
+            System.exit(0);
+        }
+
+        // Call head version of tht file.
+        File checkFile = join(CWD, fileName);
+
+        System.out.println(checkFile.getAbsolutePath());
+
+
+        if (checkFile.exists()) {
+
+            System.out.println("the file exists: " + checkFile.getAbsolutePath());
+
+            restrictedDelete(checkFile);
+        }
+
+        if (checkFile.exists()) {
+
+            System.out.println("delect wrong: " + checkFile.getAbsolutePath());
+
+        }
+
+        if (!checkFile.createNewFile()) throw new IOException("fail to create" + checkFile.getAbsolutePath());
+
+        // Get file blob.
+        String fileHash = headCommit.getMap().get(fileName);
+        File file = join(BLOB, fileHash);
+        Blob fileBlob = readObject(file, Blob.class);
+        byte[] fileContent = fileBlob.getContent();
+        writeContents(checkFile, fileContent);
+    }
+
+    //public static void checkout2(String branch) {
+        //if
+    //}
 }
