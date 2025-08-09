@@ -26,16 +26,15 @@ public class Commit implements Serializable {
     private String date;
     private String parentHash1;
     private String parentHash2;
-    private String nextCommitHash;
+    //private String nextCommitHash;
     private String message;
     private Map<String, String> table = new HashMap<>();
 
     /** Implement Constructor */
-    public Commit(String message, String date, String[] parentHash) {
+    public Commit(String message, String date, String parentHash) {
         this.date = date;
         this.message = message;
-        this.parentHash1 = parentHash[0];
-        this.parentHash2 = parentHash[1];
+        this.parentHash1 = parentHash;
     }
 
     public boolean compare(String fileName, String contentHash) {
@@ -46,14 +45,6 @@ public class Commit implements Serializable {
         }
         String content = getMap().get(fileName).toString();
         return content.equals(contentHash);
-    }
-
-    public void addNextCommitHash(String commitHash) {
-        this.nextCommitHash = commitHash;
-    }
-
-    public String getNextCommitHash() {
-        return this.nextCommitHash;
     }
 
     public Map<String, String> getMap() {
@@ -82,6 +73,10 @@ public class Commit implements Serializable {
 
     public void changeParentHash1(String currentHash) {
         this.parentHash1 = currentHash;
+    }
+
+    public void changeParentHash2(String currentHash) {
+        this.parentHash2 = currentHash;
     }
 
     public void changeMessage(String currentMessage) {
