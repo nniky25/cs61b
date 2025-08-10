@@ -72,10 +72,8 @@ public class Repository implements Serializable {
             if (!STATUS.createNewFile()) throw new IOException("fail to create" + STATUS.getAbsolutePath());
             if (!STAGING.createNewFile()) throw new IOException("fail to create" + STAGING.getAbsolutePath());
         } else {
-            error("A Gitlet version-control system already exists in the current directory.");
-            return;
+            throw error("A Gitlet version-control system already exists in the current directory.");
         }
-
         Commit init = new Commit("initial commit", "00:00:00 UTC, Thursday, 1 January 1970", null);
 
         // Save new commit to COMMIT directory.
@@ -96,8 +94,7 @@ public class Repository implements Serializable {
         //Check Whether the file exists.
         File currentFile = join(CWD, fileName);
         if (!currentFile.exists()) {
-            error("File does not exist.");
-            System.exit(0);
+            throw error("File does not exist.");
         }
         // Read File content as byte.
         byte[] fileContent = readContents(currentFile);
@@ -292,8 +289,7 @@ public class Repository implements Serializable {
                 if (fileName.exists()){
                     boolean success = restrictedDelete(fileName);
                     if (!success) {
-                        error("Fail to Delete" + fileName);
-                        System.exit(0);
+                        throw error("Fail to Delete" + fileName);
                     }
                 }
             }
@@ -304,7 +300,7 @@ public class Repository implements Serializable {
             removed = true;
         }
         if (!removed) {
-            error("No reason to remove the file.");
+            throw error("No reason to remove the file.");
         }
     }
 
@@ -316,8 +312,7 @@ public class Repository implements Serializable {
         // Get head commit object form COMMIT directory.
         File headCommit = join(COMMIT, headHash);
         if (!headCommit.exists()) {
-            error("Head commit file doesn't exist.");
-            System.exit(0);
+            throw error("Head commit file doesn't exist.");
         }
         Commit currentCommit = readObject(headCommit, Commit.class);
         return currentCommit;
@@ -327,8 +322,7 @@ public class Repository implements Serializable {
     public static Commit getCommit(String commitHash) {
         File commitFile = join(COMMIT, commitHash);
         if (!commitFile.exists()) {
-            error("No such commit exists.");
-            System.exit(0);
+            throw error("No such commit exists.");
         }
 
         Commit commit = readObject(commitFile, Commit.class);
@@ -367,16 +361,14 @@ public class Repository implements Serializable {
         }
 
         if(!output) {
-            error("Found no commit with that message.");
-            System.exit(0);
+            throw error("Found no commit with that message.");
         }
     }
 
     public static String printCommit(String fileName) {
         File currentFile = join(COMMIT, fileName);
         if (!currentFile.exists()) {
-            error("There is no " + fileName + ".");
-            System.exit(0);
+            throw error("There is no " + fileName + ".");
         }
 
         Commit currentCommit = readObject(currentFile, Commit.class);
@@ -447,11 +439,9 @@ public class Repository implements Serializable {
         Set<String> branches = status.getBranches();
 
         if (branches.size() == 2) {
-            error("Full branches.");
-            return;
+            throw error("Full branches.");
         } else if (branches.contains(branch)) {
-            error("A branch with that name already exists.");
-            return;
+            throw error("A branch with that name already exists.");
         }
 
         // Add new branch to status and update SPLIT.
@@ -476,8 +466,7 @@ public class Repository implements Serializable {
         // Check whether the file exists in this commit.
         boolean hasKey = commit.getMap().containsKey(fileName);
         if (!hasKey) {
-            error("File does not exist in that commit.");
-            System.exit(0);
+            throw error("File does not exist in that commit.");
         }
 
         // Call head version of tht file.
@@ -559,7 +548,7 @@ public class Repository implements Serializable {
             byte[] fileContent = fileBlob.getContent();
             writeContents(currentFile, fileContent);
         }
-        
+
         // Write status.
         writeObject(STATUS, status);
         // Clear Area.
@@ -577,11 +566,9 @@ public class Repository implements Serializable {
 
         // Check stations.
         if (!branches.contains(branch)) {
-            error("A branch with that name does not exist.");
-            System.exit(0);
+            throw error("A branch with that name does not exist.");
         } else if (status.getCurrentBranch().equals(branch)) {
-            error("Cannot remove the current branch.");
-            System.exit(0);
+            throw error("Cannot remove the current branch.");
         }
         // Change current branch to null
         status.changeCurrentBranch(null);

@@ -13,12 +13,10 @@ public class Main {
 
     public static void correct(String errorMessage, String[] args) {
         if (args.length == 1) {
-            Utils.error(errorMessage);
-            System.exit(0);
+            throw Utils.error(errorMessage);
         }
         if (args.length > 2) {
-            Utils.error("Wrong args length.");
-            System.exit(0);
+            throw Utils.error("Wrong args length.");
         }
     }
 
@@ -26,16 +24,14 @@ public class Main {
     public static void main(String[] args) throws IOException {
         // TODO: what if args is empty?
         if (args.length == 0) {
-            Utils.error("Please enter a command.");
-            System.exit(0);
+            throw Utils.error("Please enter a command.");
         }
         String firstArg = args[0];
 
         switch(firstArg) {
             case "init":
                 if (args.length > 2) {
-                    Utils.error("Wrong args length.");
-                    System.exit(0);
+                    throw Utils.error("Wrong args length.");
                 }
                 Repository.setupPersistence();
                 break;
@@ -56,15 +52,13 @@ public class Main {
                 break;
             case "log":
                 if (args.length > 2) {
-                    Utils.error("Wrong args length.");
-                    System.exit(0);
+                    throw Utils.error("Wrong args length.");
                 }
                 Repository.log();
                 break;
             case "global-log":
                 if (args.length > 2) {
-                    Utils.error("Wrong args length.");
-                    System.exit(0);
+                    throw Utils.error("Wrong args length.");
                 }
                 Repository.globalLog();
                 break;
@@ -75,8 +69,7 @@ public class Main {
                 break;
             case "status":
                 if (args.length > 2) {
-                    Utils.error("Wrong args length.");
-                    System.exit(0);
+                    throw Utils.error("Wrong args length.");
                 }
                 Repository.status();
                 break;
@@ -90,8 +83,7 @@ public class Main {
 
                 //String three = args[3];
                 if (args.length == 1) {
-                    Utils.error("please enter check message.");
-                    System.exit(0);
+                    throw Utils.error("please enter check message.");
                 }
                 if (args.length == 2) {
                     String checkBranch = args[1];
@@ -102,7 +94,7 @@ public class Main {
                         String checkFile = args[2];
                         Repository.checkout1(checkFile);
                     } else {
-                        Utils.error("second should be '--'. ");
+                        throw Utils.error("second should be '--'. ");
                     }
                 }
                 if (args.length == 4) {
@@ -110,14 +102,13 @@ public class Main {
                     if (symbol.equals("--")) {
                         Repository.checkout2(one, args[3]);
                     } else {
-                        Utils.error("second should be '--'. ");
+                        throw Utils.error("second should be '--'. ");
                     }
                 }
                 break;
             case "rm-branch":
                 if (args.length > 3) {
-                    Utils.error("Wrong args length.");
-                    System.exit(0);
+                    throw Utils.error("Wrong args length.");
                 }
                 Repository.remBranch(args[2]);
                 break;
