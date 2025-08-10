@@ -50,4 +50,8 @@ public class Status implements Serializable {
     public String getCurrentBranch() {
         return currentBranch;
     }
+
+    public void changeCurrentBranch(String branch) {
+        this.currentBranch = branch;
+    }
 }

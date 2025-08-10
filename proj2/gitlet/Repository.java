@@ -51,7 +51,7 @@ public class Repository implements Serializable {
 
     /* TODO: fill in the rest of this class. */
     /** Full construct (basic) .gitlet/ -- top level for all persistent data.
-     *              (basic) - split -- file containing the branch split commit object.
+     *              (basic) - split -- file containing the branch split commit hash.
      *              (basic) - commit/ -- director containing the Commit hash files.
      *              (basic) - blob/ -- director containing the Blobs of fileHash.
      *              (basic) - head -- file containing the head commit hash.
@@ -73,7 +73,7 @@ public class Repository implements Serializable {
             if (!STAGING.createNewFile()) throw new IOException("fail to create" + STAGING.getAbsolutePath());
         } else {
             error("A Gitlet version-control system already exists in the current directory.");
-            System.exit(0);
+            return;
         }
 
         Commit init = new Commit("initial commit", "00:00:00 UTC, Thursday, 1 January 1970", null);
@@ -103,7 +103,7 @@ public class Repository implements Serializable {
         byte[] fileContent = readContents(currentFile);
 
         // serialized fileContent and get hash.
-        byte[] fileByte = serialize(fileContent);
+        // byte[] fileByte = serialize(fileContent);
         String fileHash = sha1(fileContent);
 
         System.out.println(fileName + ": " + fileHash);
@@ -233,8 +233,12 @@ public class Repository implements Serializable {
 
             System.out.println("the commit changed.");
 
-
             updateCommit(currentCommit);
+
+            if (status.getCurrentBranch() == branch) {
+                String currentHeadHash = readContentsAsString(HEAD);
+                writeContents(SPLIT, currentHeadHash);
+            }
         } else {
             message("No changes added to the commit.");
         }
@@ -340,7 +344,6 @@ public class Repository implements Serializable {
         }
         if (!removed) {
             error("No reason to remove the file.");
-            System.exit(0);
         }
     }
 
@@ -357,6 +360,18 @@ public class Repository implements Serializable {
         }
         Commit currentCommit = readObject(headCommit, Commit.class);
         return currentCommit;
+    }
+
+    /** Get any commit object. */
+    public static Commit getCommit(String commitHash) {
+        File commitFile = join(COMMIT, commitHash);
+        if (!commitFile.exists()) {
+            error("No such commit exists.");
+            System.exit(0);
+        }
+
+        Commit commit = readObject(commitFile, Commit.class);
+        return commit;
     }
 
     public static void log() {
@@ -467,31 +482,46 @@ public class Repository implements Serializable {
     }
 
     public static void branch(String branch) {
+
+        System.out.println("go create a new branch.");
+
         Status status = readObject(STATUS, Status.class);
         Set<String> branches = status.getBranches();
 
         if (branches.size() == 2) {
             error("Full branches.");
-            System.exit(0);
+            return;
         } else if (branches.contains(branch)) {
             error("A branch with that name already exists.");
-            System.exit(0);
+            return;
         }
 
         // Add new branch to status and update SPLIT.
         branches.add(branch);
         String headHash = readContentsAsString(HEAD);
+
+        System.out.println(status.getBranches());
+
+        writeObject(STATUS, status);
         writeContents(SPLIT, headHash);
     }
 
     public static void checkout1(String fileName) throws IOException {
-
         System.out.println("checkout file");
 
         // Get head commit.
         Commit headCommit = getHeadCommit();
-        // Check whether the file exists in head commit.
-        boolean hasKey = headCommit.getMap().containsKey(fileName);
+        checkout(headCommit, fileName);
+    }
+
+    public static void checkout2(String fileName, String fileHash) throws IOException {
+        Commit commit = getCommit(fileHash);
+        checkout(commit, fileName);
+    }
+
+    public static void checkout(Commit commit, String fileName) throws IOException {
+        // Check whether the file exists in this commit.
+        boolean hasKey = commit.getMap().containsKey(fileName);
         if (!hasKey) {
             error("File does not exist in that commit.");
             System.exit(0);
@@ -519,14 +549,116 @@ public class Repository implements Serializable {
         if (!checkFile.createNewFile()) throw new IOException("fail to create" + checkFile.getAbsolutePath());
 
         // Get file blob.
-        String fileHash = headCommit.getMap().get(fileName);
+        String fileHash = commit.getMap().get(fileName);
         File file = join(BLOB, fileHash);
         Blob fileBlob = readObject(file, Blob.class);
         byte[] fileContent = fileBlob.getContent();
         writeContents(checkFile, fileContent);
     }
 
-    //public static void checkout2(String branch) {
-        //if
-    //}
+
+    public static void checkBranch(String branch) throws IOException {
+
+        System.out.println("Check out " + branch + " branch");
+
+        Status status = readObject(STATUS, Status.class);
+        Set<String> branches = status.getBranches();
+        Commit headCommit = getHeadCommit();
+        List<String> fileList = plainFilenamesIn(CWD);
+        Map<String, String> headMap = headCommit.getMap();
+
+        System.out.println(headMap.size());
+        System.out.println(fileList.size());
+
+        if (!branches.contains(branch)) {
+            message("No such branch exists.");
+            return;
+        } else if (branches.equals(status.getCurrentBranch())) {
+            message("No need to checkout the current branch.");
+            return;
+        } else if (headMap.size() != fileList.size()) {
+            message("There is an untracked file in the way; delete it, or add and commit it first.");
+            return;
+        }
+
+        String splitHash = readContentsAsString(SPLIT);
+        Commit splitCommit = getCommit(splitHash);
+
+        Map<String, String> splitMap = splitCommit.getMap();
+
+        // Change this branch to current branch.
+        status.changeCurrentBranch(branch);
+        // Change headHash to SPLIT.
+        String headHash = readContentsAsString(HEAD);
+        writeContents(SPLIT, headHash);
+        // Change this commitHash to head commit.
+        writeContents(HEAD, splitHash);
+
+
+        // Clean CWE except "gitlet" and ".gitlet".
+        for (int i = 0; i < fileList.size(); i++) {
+
+            System.out.println("Clean CWE except gitlet and .gitlet.");
+
+            if (fileList.get(i).equals(".gitlet") || fileList.get(i).equals("gitlet")) {
+
+                System.out.println("meet" + fileList.get(i));
+
+                continue;
+            } else {
+                // Clean files.
+                File currentFile = join(CWD, fileList.get(i));
+                restrictedDelete(currentFile);
+            }
+        }
+
+        /* Make files. */
+        for (Map.Entry<String, String> entry : splitMap.entrySet()) {
+            // Get file name and file version.
+            String key = entry.getKey();
+            String value = entry.getValue();
+
+            System.out.println("make create file " + key);
+
+            // Create and write to files.
+            File currentFile = join(CWD, key);
+            if (!currentFile.createNewFile()) throw new IOException("fail to create" + currentFile.getAbsolutePath());
+
+            // Get files from BLOB, then write content to new files.
+            File file = join(BLOB, value);
+            Blob fileBlob = readObject(file, Blob.class);
+            byte[] fileContent = fileBlob.getContent();
+            writeContents(currentFile, fileContent);
+        }
+
+        System.out.println("update");
+
+        // Write status.
+        writeObject(STATUS, status);
+        // Clear Area.
+        StagingArea Area = readObject(STAGING, StagingArea.class);
+        Area.clearStagingArea();
+        // Write Area.
+        writeObject(STAGING, Area);
+    }
+
+    /** Remove branch if there is. */
+    public static void remBranch(String branch) {
+        // Get status object
+        Status status = readObject(STATUS, Status.class);
+        Set<String> branches = status.getBranches();
+
+        // Check stations.
+        if (!branches.contains(branch)) {
+            error("A branch with that name does not exist.");
+            System.exit(0);
+        } else if (status.getCurrentBranch().equals(branch)) {
+            error("Cannot remove the current branch.");
+            System.exit(0);
+        }
+        // Change current branch to null
+        status.changeCurrentBranch(null);
+        // Write status
+        writeObject(STATUS, status);
+    }
 }

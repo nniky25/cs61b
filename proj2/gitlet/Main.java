@@ -94,8 +94,8 @@ public class Main {
                     System.exit(0);
                 }
                 if (args.length == 2) {
-                    String checkBranch = args[2];
-
+                    String checkBranch = args[1];
+                    Repository.checkBranch(checkBranch);
                 }
                 if (args.length == 3) {
                     if (one.equals("--")) {
@@ -105,6 +105,21 @@ public class Main {
                         Utils.error("second should be '--'. ");
                     }
                 }
+                if (args.length == 4) {
+                    String symbol = args[2];
+                    if (symbol.equals("--")) {
+                        Repository.checkout2(one, args[3]);
+                    } else {
+                        Utils.error("second should be '--'. ");
+                    }
+                }
+                break;
+            case "rm-branch":
+                if (args.length > 3) {
+                    Utils.error("Wrong args length.");
+                    System.exit(0);
+                }
+                Repository.remBranch(args[2]);
                 break;
         }
     }
