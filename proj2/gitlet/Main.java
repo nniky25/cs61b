@@ -43,7 +43,7 @@ public class Main {
                     String message = args[1];
                     // when the message is "".
                     if (message.trim().isEmpty()) {
-                        System.out.println("Please enter a message.");
+                        System.out.println("Please enter a commit message.");
                         break;
                     }
                     Repository.commit(args[1]);

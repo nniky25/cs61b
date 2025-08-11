@@ -286,10 +286,14 @@ public class Repository implements Serializable {
      *  commit, and remove the file from the working directory if the user has not already
      *  done so (do not remove it unless it is tracked in the current commit).
      */
-    public static void rm(String rmFileName) {
+    public static void rm(String rmFileName) throws IOException {
         boolean removed = false;
 
         File fileName = join(CWD, rmFileName);
+        if (!fileName.exists()) {
+            return;
+        }
+
         Status status = readObject(STATUS, Status.class);
 
         /* Check Whether it is in add and remove staged area. */
@@ -319,6 +323,7 @@ public class Repository implements Serializable {
                 if (!hadKeyInRem) {
                     stagedRem.put(rmFileName, null);
                     status.removeFile(rmFileName);
+                    restrictedDelete(fileName);
                 }
             } else {
                 stagedAdd.remove(rmFileName);
