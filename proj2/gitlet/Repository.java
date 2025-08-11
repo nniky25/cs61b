@@ -294,6 +294,11 @@ public class Repository implements Serializable {
             return;
         }
 
+        // Read File content as byte.
+        byte[] fileContent = readContents(fileName);
+        // serialized fileContent and get hash.
+        String fileHash = sha1(fileContent);
+
         Status status = readObject(STATUS, Status.class);
 
         /* Check Whether it is in add and remove staged area. */
@@ -321,7 +326,7 @@ public class Repository implements Serializable {
         if (hasKey) {
             if (!hasKeyInAdd) {
                 if (!hadKeyInRem) {
-                    stagedRem.put(rmFileName, null);
+                    stagedRem.put(rmFileName, fileHash);
                     status.removeFile(rmFileName);
                     restrictedDelete(fileName);
                 }
