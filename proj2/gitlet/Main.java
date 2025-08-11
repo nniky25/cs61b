@@ -36,14 +36,14 @@ public class Main {
                     break;
                 case "add":
                     correct("Please enter a file.", args);
-                    String message = args[1];
-                    if (message == null) {
-                        throw Utils.error(message);
-                    }
                     Repository.add(args[1]);
                     break;
                 case "commit":
                     correct("Please enter a message.", args);
+                    String message = args[1];
+                    if (message == null) {
+                        throw Utils.error("Please enter a message.");
+                    }
                     Repository.commit(args[1]);
                     break;
                 case "rm":
@@ -74,7 +74,7 @@ public class Main {
                     break;
                 case "branch":
                     correct("Please enter a new branch.", args);
-                    Repository.branch(args[1]);
+                    Repository.addBranch(args[1]);
                     break;
                 case "checkout":
                     if (args.length == 1) {
@@ -107,6 +107,7 @@ public class Main {
                         throw Utils.error("Wrong args length.");
                     }
                     Repository.reset(args[1]);
+                    break;
                 default:
                     throw Utils.error("No command with that name exists.");
             }

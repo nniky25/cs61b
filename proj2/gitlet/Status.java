@@ -35,6 +35,11 @@ public class Status implements Serializable {
         removedFiles.add(fileName);
     }
 
+    public void remStagedFile(String fileName) {
+        stagedFiles.remove(fileName);
+
+    }
+
     public Set<String> getBranches() {
         return branches;
     }

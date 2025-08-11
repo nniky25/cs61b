@@ -23,7 +23,7 @@ public class Repository implements Serializable {
      * comment above them describing what that variable represents and how that
      * variable is used. We've provided two examples for you.
      */
-    private static String branch = "master";
+    private static String initBranch = "master";
     private static String otherBranch;
     private static String currentbranch;
     //private static StagingArea Area = new StagingArea();
@@ -86,10 +86,9 @@ public class Repository implements Serializable {
                 throw new IOException("fail to create" + STAGING.getAbsolutePath());
             }
         } else {
-            message("A Gitlet version-control system already exists in the current directory.");
-            System.exit(1);
+            throw error("A Gitlet version-control system already exists in the current directory.");
         }
-        Instant now = Instant.now();;
+        Instant now = Instant.now();
         Commit init = new Commit("initial commit",  now, null);
 
         // Save new commit to COMMIT directory.
@@ -100,8 +99,8 @@ public class Repository implements Serializable {
         writeObject(STAGING, area);
 
         // Set Status Object to STATUS file.
-        Status status = new Status(branch);
-        status.addBranch(branch);
+        Status status = new Status(initBranch);
+        status.addBranch(initBranch);
         writeObject(STATUS, status);
     }
 
@@ -110,7 +109,8 @@ public class Repository implements Serializable {
         //Check Whether the file exists.
         File currentFile = join(CWD, fileName);
         if (!currentFile.exists()) {
-            throw error("File does not exist.");
+            System.out.println("File does not exist.");
+            System.exit(1);
         }
         // Read File content as byte.
         byte[] fileContent = readContents(currentFile);
@@ -119,14 +119,14 @@ public class Repository implements Serializable {
         String fileHash = sha1(fileContent);
 
         // Update
-        StagingArea Area = readObject(STAGING, StagingArea.class);
+        StagingArea area = readObject(STAGING, StagingArea.class);
         /* Copy file to Staged for addition area if changed. */
-        updateArea(fileName, fileHash, Area, fileContent);
+        updateArea(fileName, fileHash, area, fileContent);
     }
 
     /** Check, then update STAGING file and add new blob to BLOB directory. */
-    private static void updateArea(String fileName, String fileHash, StagingArea currentArea, byte[] fileContent) throws IOException {
-        /* Check the fileName if was added to headCommit and if the same content if added. */
+    private static void updateArea(String file, String hash, StagingArea area, byte[] bytes) throws IOException {
+        /* Check the file if was added to headCommit and if the same content if added. */
         // Get headCommit Object and Status Object.
         String headHash = readContentsAsString(HEAD);
         File headFile = join(COMMIT, headHash);
@@ -136,32 +136,32 @@ public class Repository implements Serializable {
         Commit headCommit = readObject(headFile, Commit.class);
 
         // Check
-        boolean hasKey = headCommit.getMap().containsKey(fileName);
+        boolean hasKey = headCommit.getMap().containsKey(file);
         if (hasKey) {
-            // The fileName was added to headCommit before.
+            // The file was added to headCommit before.
             /*   If content is different, add, else don't. */
 
-            if (!headCommit.compare(fileName, fileHash)) {
+            if (!headCommit.compare(file, hash)) {
                 // -> Update Area
-                currentArea.updateAdd(fileName, fileHash);
-                writeObject(STAGING, currentArea);
+                area.updateAdd(file, hash);
+                writeObject(STAGING, area);
 
                 // -> Add Blob
-                updateBlob(fileHash, fileContent);
+                updateBlob(hash, bytes);
 
                 //System.out.println("the first time add file");
             }
         } else {
-            // The fileName didn't be added to headCommit before.
+            // The file didn't be added to headCommit before.
             // -> Update Area
-            currentArea.updateAdd(fileName, fileHash);
-            writeObject(STAGING, currentArea);
+            area.updateAdd(file, hash);
+            writeObject(STAGING, area);
 
             // -> Add Blob
-            updateBlob(fileHash, fileContent);
+            updateBlob(hash, bytes);
 
             // -> Add status
-            status.addStagedFile(fileName);
+            status.addStagedFile(file);
             writeObject(STATUS, status);
 
         }
@@ -227,7 +227,7 @@ public class Repository implements Serializable {
             // Write status to STATUS.
             writeObject(STATUS, status);
 
-            if (status.getCurrentBranch().equals(branch)) {
+            if (status.getCurrentBranch().equals(initBranch)) {
                 String currentHeadHash = readContentsAsString(HEAD);
                 writeContents(SPLIT, currentHeadHash);
             }
@@ -246,7 +246,9 @@ public class Repository implements Serializable {
         if (newBlob.exists()) {
             System.exit(0);
         }
-        if (!newBlob.createNewFile()) throw new IOException("fail to create" + newBlob.getAbsolutePath());
+        if (!newBlob.createNewFile()) {
+            throw new IOException("fail to create" + newBlob.getAbsolutePath());
+        }
         Blob currentBlob = new Blob(fileContent);
         writeObject(newBlob, /*(Serializable)*/ currentBlob);
     }
@@ -294,7 +296,7 @@ public class Repository implements Serializable {
         if (hasKeyInAdd) {
             stagedAdd.remove(rmFileName);
             // update status
-            status.removeFile(rmFileName);
+            status.remStagedFile(rmFileName);
 
             removed = true;
         }
@@ -307,7 +309,7 @@ public class Repository implements Serializable {
                 stagedRem.put(rmFileName, null);
                 // update status
                 status.removeFile(rmFileName);
-                if (fileName.exists()){
+                if (fileName.exists()) {
                     boolean success = restrictedDelete(fileName);
                     if (!success) {
                         throw error("Fail to Delete" + fileName);
@@ -321,7 +323,8 @@ public class Repository implements Serializable {
             removed = true;
         }
         if (!removed) {
-            throw error("No reason to remove the file.");
+            System.out.println("No reason to remove the file.");
+            System.exit(1);
         }
     }
 
@@ -381,8 +384,9 @@ public class Repository implements Serializable {
             }
         }
 
-        if(!output) {
-            throw error("Found no commit with that message.");
+        if (!output) {
+            message("Found no commit with that message.");
+            System.exit(1);
         }
     }
 
@@ -459,14 +463,16 @@ public class Repository implements Serializable {
         System.out.println();
     }
 
-    public static void branch(String branch) {
+    public static void addBranch(String branch) {
         Status status = readObject(STATUS, Status.class);
         Set<String> branches = status.getBranches();
 
-        if (branches.size() == 2) {
-            throw error("Full branches.");
-        } else if (branches.contains(branch)) {
-            throw error("A branch with that name already exists.");
+        if (branches.contains(branch)) {
+            System.out.println("A branch with that name already exists.");
+            System.exit(1);
+        } else if (branches.size() == 2) {
+            System.out.println("Full branches.");
+            System.exit(1);
         }
 
         // Add new branch to status and update SPLIT.
@@ -491,7 +497,8 @@ public class Repository implements Serializable {
         // Check whether the file exists in this commit.
         boolean hasKey = commit.getMap().containsKey(fileName);
         if (!hasKey) {
-            throw error("File does not exist in that commit.");
+            message("File does not exist in that commit.");
+            System.exit(1);
         }
 
         // Call head version of tht file.
@@ -501,10 +508,9 @@ public class Repository implements Serializable {
             restrictedDelete(checkFile);
         }
 
-        if (checkFile.exists()) {
+        if (!checkFile.createNewFile()) {
+            throw new IOException("fail to create" + checkFile.getAbsolutePath());
         }
-
-        if (!checkFile.createNewFile()) throw new IOException("fail to create" + checkFile.getAbsolutePath());
 
         // Get file blob.
         String fileHash = commit.getMap().get(fileName);
@@ -523,14 +529,14 @@ public class Repository implements Serializable {
         Map<String, String> headMap = headCommit.getMap();
 
         if (!branches.contains(branch)) {
-            message("No such branch exists.");
-            return;
+            System.out.println("No such branch exists.");
+            System.exit(1);
         } else if (branches.equals(status.getCurrentBranch())) {
-            message("No need to checkout the current branch.");
-            return;
+            System.out.println("No need to checkout the current branch.");
+            System.exit(1);
         } else if (headMap.size() != fileList.size()) {
-            message("There is an untracked file in the way; delete it, or add and commit it first.");
-            return;
+            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.exit(1);
         }
 
         String splitHash = readContentsAsString(SPLIT);
@@ -551,11 +557,11 @@ public class Repository implements Serializable {
 
         // Write status.
         writeObject(STATUS, status);
-        // Clear Area.
-        StagingArea Area = readObject(STAGING, StagingArea.class);
-        Area.clearStagingArea();
-        // Write Area.
-        writeObject(STAGING, Area);
+        // Clear area.
+        StagingArea area = readObject(STAGING, StagingArea.class);
+        area.clearStagingArea();
+        // Write area.
+        writeObject(STAGING, area);
     }
 
     public static void cleanAndMakeFiles(Map<String, String> map, List<String> fileList) throws IOException {
@@ -597,9 +603,11 @@ public class Repository implements Serializable {
 
         // Check stations.
         if (!branches.contains(branch)) {
-            throw error("A branch with that name does not exist.");
+            System.out.println("A branch with that name does not exist.");
+            System.exit(1);
         } else if (status.getCurrentBranch().equals(branch)) {
-            throw error("Cannot remove the current branch.");
+            System.out.println("Cannot remove the current branch.");
+            System.exit(1);
         }
         // Change current branch to null
         status.changeCurrentBranch(null);
@@ -615,11 +623,11 @@ public class Repository implements Serializable {
 
         // Clean and make files.
         cleanAndMakeFiles(map, fileList);
-        // Clear Area.
-        StagingArea Area = readObject(STAGING, StagingArea.class);
-        Area.clearStagingArea();
-        // Write Area.
-        writeObject(STAGING, Area);
+        // Clear area.
+        StagingArea area = readObject(STAGING, StagingArea.class);
+        area.clearStagingArea();
+        // Write area.
+        writeObject(STAGING, area);
         // Write head.
         writeContents(HEAD, commitHash);
     }
