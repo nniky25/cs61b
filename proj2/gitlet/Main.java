@@ -41,7 +41,8 @@ public class Main {
                 case "commit":
                     correct("Please enter a message.", args);
                     String message = args[1];
-                    if (message == null) {
+                    // when the message is "".
+                    if (message.trim().isEmpty()) {
                         throw Utils.error("Please enter a message.");
                     }
                     Repository.commit(args[1]);

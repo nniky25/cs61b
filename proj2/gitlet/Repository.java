@@ -86,7 +86,8 @@ public class Repository implements Serializable {
                 throw new IOException("fail to create" + STAGING.getAbsolutePath());
             }
         } else {
-            throw error("A Gitlet version-control system already exists in the current directory.");
+            System.out.println("A Gitlet version-control system already exists in the current directory.");
+            return;
         }
         Instant now = Instant.now();
         Commit init = new Commit("initial commit",  now, null);
@@ -110,7 +111,7 @@ public class Repository implements Serializable {
         File currentFile = join(CWD, fileName);
         if (!currentFile.exists()) {
             System.out.println("File does not exist.");
-            System.exit(1);
+            return;
         }
         // Read File content as byte.
         byte[] fileContent = readContents(currentFile);
@@ -316,15 +317,14 @@ public class Repository implements Serializable {
                     }
                 }
             }
-
-            // write area and status to file.
-            writeObject(STAGING, area);
-            writeObject(STATUS, status);
             removed = true;
         }
+        // write area and status to file.
+        writeObject(STAGING, area);
+        writeObject(STATUS, status);
+
         if (!removed) {
             System.out.println("No reason to remove the file.");
-            System.exit(1);
         }
     }
 
@@ -346,7 +346,8 @@ public class Repository implements Serializable {
     public static Commit getCommit(String commitHash) {
         File commitFile = join(COMMIT, commitHash);
         if (!commitFile.exists()) {
-            throw error("No commit with that id exists.");
+            System.out.println("No commit with that id exists.");
+            return null;
         }
 
         Commit commit = readObject(commitFile, Commit.class);
@@ -386,7 +387,6 @@ public class Repository implements Serializable {
 
         if (!output) {
             message("Found no commit with that message.");
-            System.exit(1);
         }
     }
 
@@ -469,10 +469,10 @@ public class Repository implements Serializable {
 
         if (branches.contains(branch)) {
             System.out.println("A branch with that name already exists.");
-            System.exit(1);
+            return;
         } else if (branches.size() == 2) {
             System.out.println("Full branches.");
-            System.exit(1);
+            return;
         }
 
         // Add new branch to status and update SPLIT.
@@ -490,6 +490,9 @@ public class Repository implements Serializable {
 
     public static void checkout2(String fileName, String commitHash) throws IOException {
         Commit commit = getCommit(commitHash);
+        if (commit == null) {
+            return;
+        }
         checkout(commit, fileName);
     }
 
@@ -498,7 +501,7 @@ public class Repository implements Serializable {
         boolean hasKey = commit.getMap().containsKey(fileName);
         if (!hasKey) {
             message("File does not exist in that commit.");
-            System.exit(1);
+            return;
         }
 
         // Call head version of tht file.
@@ -520,32 +523,34 @@ public class Repository implements Serializable {
         writeContents(checkFile, fileContent);
     }
 
-
-    public static void checkBranch(String branch) throws IOException {
+    public static void checkBranch(String thisBranch) throws IOException {
         Status status = readObject(STATUS, Status.class);
         Set<String> branches = status.getBranches();
         Commit headCommit = getHeadCommit();
         List<String> fileList = plainFilenamesIn(CWD);
         Map<String, String> headMap = headCommit.getMap();
 
-        if (!branches.contains(branch)) {
+        if (!branches.contains(thisBranch)) {
             System.out.println("No such branch exists.");
-            System.exit(1);
-        } else if (branches.equals(status.getCurrentBranch())) {
+            return;
+        } else if (thisBranch.equals(status.getCurrentBranch())) {
             System.out.println("No need to checkout the current branch.");
-            System.exit(1);
+            return;
         } else if (headMap.size() != fileList.size()) {
             System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-            System.exit(1);
+            return;
         }
 
         String splitHash = readContentsAsString(SPLIT);
         Commit splitCommit = getCommit(splitHash);
+        if (splitCommit == null) {
+            return;
+        }
 
         Map<String, String> splitMap = splitCommit.getMap();
 
-        // Change this branch to current branch.
-        status.changeCurrentBranch(branch);
+        // Change this thisBranch to current thisBranch.
+        status.changeCurrentBranch(thisBranch);
         // Change headHash to SPLIT.
         String headHash = readContentsAsString(HEAD);
         writeContents(SPLIT, headHash);
@@ -595,28 +600,31 @@ public class Repository implements Serializable {
         }
     }
 
-    /** Remove branch if there is. */
-    public static void remBranch(String branch) {
+    /** Remove thisBranch if there is. */
+    public static void remBranch(String thisBranch) {
         // Get status object
         Status status = readObject(STATUS, Status.class);
         Set<String> branches = status.getBranches();
 
         // Check stations.
-        if (!branches.contains(branch)) {
+        if (!branches.contains(thisBranch)) {
             System.out.println("A branch with that name does not exist.");
-            System.exit(1);
-        } else if (status.getCurrentBranch().equals(branch)) {
+            return;
+        } else if (status.getCurrentBranch().equals(thisBranch)) {
             System.out.println("Cannot remove the current branch.");
-            System.exit(1);
+            return;
         }
-        // Change current branch to null
-        status.changeCurrentBranch(null);
+        // Change current thisBranch to null
+        status.remBranch(thisBranch);
         // Write status
         writeObject(STATUS, status);
     }
 
     public static void reset(String commitHash) throws IOException {
         Commit currentCommit = getCommit(commitHash);
+        if (currentCommit == null) {
+            return;
+        }
         List<String> fileList = plainFilenamesIn(CWD);
 
         Map<String, String> map = currentCommit.getMap();

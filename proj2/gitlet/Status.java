@@ -31,7 +31,6 @@ public class Status implements Serializable {
 
     /* Remove the file from stagedFiles to removedFiles. */
     public void removeFile(String fileName) {
-        stagedFiles.remove(fileName);
         removedFiles.add(fileName);
     }
 
