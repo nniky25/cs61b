@@ -290,9 +290,6 @@ public class Repository implements Serializable {
         boolean removed = false;
 
         File fileName = join(CWD, rmFileName);
-        if (!fileName.exists()) {
-            return;
-        }
 
         // Read File content as byte.
         byte[] fileContent = readContents(fileName);
