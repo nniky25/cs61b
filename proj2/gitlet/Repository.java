@@ -86,7 +86,8 @@ public class Repository implements Serializable {
                 throw new IOException("fail to create" + STAGING.getAbsolutePath());
             }
         } else {
-            System.out.println("A Gitlet version-control system already exists in the current directory.");
+            System.out.println("A Gitlet version-control system "
+                    + "already exists in the current directory.");
             return;
         }
         Instant now = Instant.now();
@@ -126,7 +127,8 @@ public class Repository implements Serializable {
     }
 
     /** Check, then update STAGING file and add new blob to BLOB directory. */
-    private static void updateArea(String file, String hash, StagingArea area, byte[] bytes) throws IOException {
+    private static void updateArea(String file, String hash, StagingArea area,
+                                   byte[] bytes) throws IOException {
         /* Check the file if was added to headCommit and if the same content if added. */
         // Get headCommit Object and Status Object.
         String headHash = readContentsAsString(HEAD);
@@ -227,11 +229,6 @@ public class Repository implements Serializable {
             status.cleanStage();
             // Write status to STATUS.
             writeObject(STATUS, status);
-
-            if (status.getCurrentBranch().equals(initBranch)) {
-                String currentHeadHash = readContentsAsString(HEAD);
-                writeContents(SPLIT, currentHeadHash);
-            }
         } else {
             message("No changes added to the commit.");
         }
@@ -305,20 +302,21 @@ public class Repository implements Serializable {
         // Add the file to Remove Staged area if it is in Head Commit, and delect it.
         Commit headCommit = getHeadCommit();
         boolean hasKey = headCommit.getMap().containsKey(rmFileName);
+
         if (hasKey) {
-            if (!hadKeyInRem) {
-                stagedRem.put(rmFileName, null);
-                // update status
-                status.removeFile(rmFileName);
-                if (fileName.exists()) {
-                    boolean success = restrictedDelete(fileName);
-                    if (!success) {
-                        throw error("Fail to Delete" + fileName);
-                    }
+            if (!hasKeyInAdd) {
+                if (!hadKeyInRem) {
+                    stagedRem.put(rmFileName, null);
+                    status.removeFile(rmFileName);
                 }
+            } else {
+                stagedAdd.remove(rmFileName);
+                // update status
+                status.remStagedFile(rmFileName);
             }
             removed = true;
         }
+
         // write area and status to file.
         writeObject(STAGING, area);
         writeObject(STATUS, status);
@@ -537,7 +535,8 @@ public class Repository implements Serializable {
             System.out.println("No need to checkout the current branch.");
             return;
         } else if (headMap.size() != fileList.size()) {
-            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.out.println("There is an untracked file "
+                    + "in the way; delete it, or add and commit it first.");
             return;
         }
 
@@ -558,7 +557,7 @@ public class Repository implements Serializable {
         writeContents(HEAD, splitHash);
 
         // Clean CWD and make files.
-        cleanAndMakeFiles(splitMap, fileList);
+        cleanCWDandMakeFiles(splitMap, fileList);
 
         // Write status.
         writeObject(STATUS, status);
@@ -569,11 +568,11 @@ public class Repository implements Serializable {
         writeObject(STAGING, area);
     }
 
-    public static void cleanAndMakeFiles(Map<String, String> map, List<String> fileList) throws IOException {
+    public static void cleanCWDandMakeFiles(Map<String, String> map,
+                                            List<String> fileList) throws IOException {
         // Clean CWE except "gitlet" and ".gitlet".
         for (int i = 0; i < fileList.size(); i++) {
             if (fileList.get(i).equals(".gitlet") || fileList.get(i).equals("gitlet")) {
-                continue;
             } else {
                 // Clean files.
                 File currentFile = join(CWD, fileList.get(i));
@@ -630,7 +629,7 @@ public class Repository implements Serializable {
         Map<String, String> map = currentCommit.getMap();
 
         // Clean and make files.
-        cleanAndMakeFiles(map, fileList);
+        cleanCWDandMakeFiles(map, fileList);
         // Clear area.
         StagingArea area = readObject(STAGING, StagingArea.class);
         area.clearStagingArea();
