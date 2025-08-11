@@ -11,17 +11,13 @@ import java.util.*;
 import static gitlet.Utils.*;
 import static gitlet.Utils.writeContents;
 
-// TODO: any imports you need here
-
 /** Represents a gitlet repository.
- *  TODO: It's a good idea to give a description here of what else this Class
  *  does at a high level.
  *
- *  @author TODO
+ *  @author Garry
  */
 public class Repository implements Serializable {
     /**
-     * TODO: add instance variables here.
      *
      * List all instance variables of the Repository class here with a useful
      * comment above them describing what that variable represents and how that
@@ -52,7 +48,6 @@ public class Repository implements Serializable {
     public static final File STAGING = join(GITLET_DIR, "staging");
 
 
-    /* TODO: fill in the rest of this class. */
     /** Full construct (basic) .gitlet/ -- top level for all persistent data.
      *              (basic) - split -- file containing the branch split commit hash.
      *              (basic) - commit/ -- director containing the Commit hash files.
@@ -66,16 +61,33 @@ public class Repository implements Serializable {
     /** init basic construct. */
     public static void setupPersistence() throws IOException {
         if (!GITLET_DIR.exists()) {
-            if (!GITLET_DIR.mkdir()) throw new IOException("fail to mkdir" + GITLET_DIR.getAbsolutePath());
-            if (!SPLIT.createNewFile()) throw new IOException("fail to create" + SPLIT.getAbsolutePath());
-            if (!COMMIT.mkdir()) throw new IOException("fail to mkdir" + COMMIT.getAbsolutePath());
-            if (!BLOB.mkdir()) throw new IOException("fail to mkdir" + BLOB.getAbsolutePath());
-            if (!HEAD.createNewFile()) throw new IOException("fail to create" + HEAD.getAbsolutePath());
-            if (!BRANCH.createNewFile()) throw new IOException("fail to create" + BRANCH.getAbsolutePath());
-            if (!STATUS.createNewFile()) throw new IOException("fail to create" + STATUS.getAbsolutePath());
-            if (!STAGING.createNewFile()) throw new IOException("fail to create" + STAGING.getAbsolutePath());
+            if (!GITLET_DIR.mkdir()) {
+                throw new IOException("fail to mkdir" + GITLET_DIR.getAbsolutePath());
+            }
+            if (!SPLIT.createNewFile()) {
+                throw new IOException("fail to create" + SPLIT.getAbsolutePath());
+            }
+            if (!COMMIT.mkdir()) {
+                throw new IOException("fail to mkdir" + COMMIT.getAbsolutePath());
+            }
+            if (!BLOB.mkdir()) {
+                throw new IOException("fail to mkdir" + BLOB.getAbsolutePath());
+            }
+            if (!HEAD.createNewFile()) {
+                throw new IOException("fail to create" + HEAD.getAbsolutePath());
+            }
+            if (!BRANCH.createNewFile()) {
+                throw new IOException("fail to create" + BRANCH.getAbsolutePath());
+            }
+            if (!STATUS.createNewFile()) {
+                throw new IOException("fail to create" + STATUS.getAbsolutePath());
+            }
+            if (!STAGING.createNewFile()) {
+                throw new IOException("fail to create" + STAGING.getAbsolutePath());
+            }
         } else {
-            throw error("A Gitlet version-control system already exists in the current directory.");
+            message("A Gitlet version-control system already exists in the current directory.");
+            System.exit(1);
         }
         Instant now = Instant.now();;
         Commit init = new Commit("initial commit",  now, null);
@@ -84,8 +96,8 @@ public class Repository implements Serializable {
         updateCommit(init);
 
         // Set Area Object to STAGING file.
-        StagingArea Area = new StagingArea();
-        writeObject(STAGING, Area);
+        StagingArea area = new StagingArea();
+        writeObject(STAGING, area);
 
         // Set Status Object to STATUS file.
         Status status = new Status(branch);
@@ -119,9 +131,9 @@ public class Repository implements Serializable {
         String headHash = readContentsAsString(HEAD);
         File headFile = join(COMMIT, headHash);
 
-        Commit headCommit = readObject(headFile, Commit.class);
-
         Status status = readObject(STATUS, Status.class);
+
+        Commit headCommit = readObject(headFile, Commit.class);
 
         // Check
         boolean hasKey = headCommit.getMap().containsKey(fileName);
@@ -148,7 +160,10 @@ public class Repository implements Serializable {
             // -> Add Blob
             updateBlob(fileHash, fileContent);
 
-            //System.out.println("add file");
+            // -> Add status
+            status.addStagedFile(fileName);
+            writeObject(STATUS, status);
+
         }
         //System.out.println("nothing add");
     }
@@ -165,23 +180,22 @@ public class Repository implements Serializable {
         Commit currentCommit = getHeadCommit();
         String headHash = readContentsAsString(HEAD);
 
+        // Get status
+        Status status = readObject(STATUS, Status.class);
+
         // New date
         Instant now = Instant.now();
 
-        // Get staging Area
-        StagingArea Area = readObject(STAGING, StagingArea.class);
-        Map<String, String> stagedAdd = Area.getStagedAdd();
-        Map<String, String> stagedRem = Area.getStagedRem();
-
+        // Get staging area
+        StagingArea area = readObject(STAGING, StagingArea.class);
+        Map<String, String> stagedAdd = area.getStagedAdd();
+        Map<String, String> stagedRem = area.getStagedRem();
 
         /* Update current commit Object. */
         currentCommit.changeDate(now);
         currentCommit.changeMessage(message);
         currentCommit.changeParentHash1(headHash);
         Map<String, String> currentCommitMap = currentCommit.getMap();
-
-        // Get status object.
-        Status status = readObject(STATUS, Status.class);
 
         // Add to table
         if (!stagedAdd.isEmpty()) {
@@ -190,8 +204,6 @@ public class Repository implements Serializable {
                 String value = entry.getValue();
                 currentCommitMap.put(key, value);
 
-                status.addStagedFile(key);
-                writeObject(STATUS, status);
             }
             changedTable = true;
         }
@@ -203,7 +215,6 @@ public class Repository implements Serializable {
                 String value = entry.getValue();
                 currentCommitMap.remove(key, value);
 
-                status.removeFile(key);
             }
             changedTable = true;
         }
@@ -211,18 +222,22 @@ public class Repository implements Serializable {
         if (changedTable) {
             // Save new commit to COMMIT directory.
             updateCommit(currentCommit);
+            // Clean stage in status.
+            status.cleanStage();
+            // Write status to STATUS.
+            writeObject(STATUS, status);
 
-            if (status.getCurrentBranch() == branch) {
+            if (status.getCurrentBranch().equals(branch)) {
                 String currentHeadHash = readContentsAsString(HEAD);
                 writeContents(SPLIT, currentHeadHash);
             }
         } else {
             message("No changes added to the commit.");
         }
-        // Clear Area
-        Area.clearStagingArea();
-        // Write Area and commit.
-        writeObject(STAGING, Area);
+        // Clear area
+        area.clearStagingArea();
+        // Write area and commit.
+        writeObject(STAGING, area);
     }
 
     /** Add new Blob to BLOB directory. */
@@ -247,7 +262,9 @@ public class Repository implements Serializable {
         writeContents(HEAD, commitHash);
         // Create initCommit file which named commitHash under COMMIT directory.
         File initCommit = join(COMMIT, commitHash);
-        if (!initCommit.createNewFile()) throw new IOException("fail to create" + initCommit.getAbsolutePath());
+        if (!initCommit.createNewFile()) {
+            throw new IOException("fail to create" + initCommit.getAbsolutePath());
+        }
 
         // Write commit into commitHash file.
         writeObject(initCommit, currentCommit);
@@ -265,15 +282,15 @@ public class Repository implements Serializable {
         Status status = readObject(STATUS, Status.class);
 
         /* Check Whether it is in add and remove staged area. */
-        // Get Area
-        StagingArea Area = readObject(STAGING, StagingArea.class);
-        Map<String, String> stagedAdd = Area.getStagedAdd();
-        Map<String, String> stagedRem = Area.getStagedRem();
+        // Get area
+        StagingArea area = readObject(STAGING, StagingArea.class);
+        Map<String, String> stagedAdd = area.getStagedAdd();
+        Map<String, String> stagedRem = area.getStagedRem();
 
         boolean hasKeyInAdd = stagedAdd.containsKey(rmFileName);
         boolean hadKeyInRem = stagedRem.containsKey(rmFileName);
 
-        // Remove the file if it in Add Staged Area.
+        // Remove the file if it in Add Staged area.
         if (hasKeyInAdd) {
             stagedAdd.remove(rmFileName);
             // update status
@@ -282,7 +299,7 @@ public class Repository implements Serializable {
             removed = true;
         }
 
-        // Add the file to Remove Staged Area if it is in Head Commit, and delect it.
+        // Add the file to Remove Staged area if it is in Head Commit, and delect it.
         Commit headCommit = getHeadCommit();
         boolean hasKey = headCommit.getMap().containsKey(rmFileName);
         if (hasKey) {
@@ -298,8 +315,8 @@ public class Repository implements Serializable {
                 }
             }
 
-            // write Area and status to file.
-            writeObject(STAGING, Area);
+            // write area and status to file.
+            writeObject(STAGING, area);
             writeObject(STATUS, status);
             removed = true;
         }
@@ -326,7 +343,7 @@ public class Repository implements Serializable {
     public static Commit getCommit(String commitHash) {
         File commitFile = join(COMMIT, commitHash);
         if (!commitFile.exists()) {
-            throw error("No such commit exists.");
+            throw error("No commit with that id exists.");
         }
 
         Commit commit = readObject(commitFile, Commit.class);
@@ -465,8 +482,8 @@ public class Repository implements Serializable {
         checkout(headCommit, fileName);
     }
 
-    public static void checkout2(String fileName, String fileHash) throws IOException {
-        Commit commit = getCommit(fileHash);
+    public static void checkout2(String fileName, String commitHash) throws IOException {
+        Commit commit = getCommit(commitHash);
         checkout(commit, fileName);
     }
 
@@ -529,7 +546,19 @@ public class Repository implements Serializable {
         // Change this commitHash to head commit.
         writeContents(HEAD, splitHash);
 
+        // Clean CWD and make files.
+        cleanAndMakeFiles(splitMap, fileList);
 
+        // Write status.
+        writeObject(STATUS, status);
+        // Clear Area.
+        StagingArea Area = readObject(STAGING, StagingArea.class);
+        Area.clearStagingArea();
+        // Write Area.
+        writeObject(STAGING, Area);
+    }
+
+    public static void cleanAndMakeFiles(Map<String, String> map, List<String> fileList) throws IOException {
         // Clean CWE except "gitlet" and ".gitlet".
         for (int i = 0; i < fileList.size(); i++) {
             if (fileList.get(i).equals(".gitlet") || fileList.get(i).equals("gitlet")) {
@@ -542,13 +571,15 @@ public class Repository implements Serializable {
         }
 
         /* Make files. */
-        for (Map.Entry<String, String> entry : splitMap.entrySet()) {
+        for (Map.Entry<String, String> entry : map.entrySet()) {
             // Get file name and file version.
             String key = entry.getKey();
             String value = entry.getValue();
             // Create and write to files.
             File currentFile = join(CWD, key);
-            if (!currentFile.createNewFile()) throw new IOException("fail to create" + currentFile.getAbsolutePath());
+            if (!currentFile.createNewFile()) {
+                throw new IOException("fail to create" + currentFile.getAbsolutePath());
+            }
 
             // Get files from BLOB, then write content to new files.
             File file = join(BLOB, value);
@@ -556,14 +587,6 @@ public class Repository implements Serializable {
             byte[] fileContent = fileBlob.getContent();
             writeContents(currentFile, fileContent);
         }
-
-        // Write status.
-        writeObject(STATUS, status);
-        // Clear Area.
-        StagingArea Area = readObject(STAGING, StagingArea.class);
-        Area.clearStagingArea();
-        // Write Area.
-        writeObject(STAGING, Area);
     }
 
     /** Remove branch if there is. */
@@ -582,5 +605,22 @@ public class Repository implements Serializable {
         status.changeCurrentBranch(null);
         // Write status
         writeObject(STATUS, status);
+    }
+
+    public static void reset(String commitHash) throws IOException {
+        Commit currentCommit = getCommit(commitHash);
+        List<String> fileList = plainFilenamesIn(CWD);
+
+        Map<String, String> map = currentCommit.getMap();
+
+        // Clean and make files.
+        cleanAndMakeFiles(map, fileList);
+        // Clear Area.
+        StagingArea Area = readObject(STAGING, StagingArea.class);
+        Area.clearStagingArea();
+        // Write Area.
+        writeObject(STAGING, Area);
+        // Write head.
+        writeContents(HEAD, commitHash);
     }
 }

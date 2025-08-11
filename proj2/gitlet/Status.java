@@ -54,4 +54,9 @@ public class Status implements Serializable {
     public void changeCurrentBranch(String branch) {
         this.currentBranch = branch;
     }
+
+    public void cleanStage() {
+        stagedFiles.clear();
+        removedFiles.clear();
+    }
 }

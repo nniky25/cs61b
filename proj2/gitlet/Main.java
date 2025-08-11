@@ -36,6 +36,10 @@ public class Main {
                     break;
                 case "add":
                     correct("Please enter a file.", args);
+                    String message = args[1];
+                    if (message == null) {
+                        throw Utils.error(message);
+                    }
                     Repository.add(args[1]);
                     break;
                 case "commit":
@@ -98,6 +102,11 @@ public class Main {
                     }
                     Repository.remBranch(args[1]);
                     break;
+                case "reset":
+                    if (args.length != 2) {
+                        throw Utils.error("Wrong args length.");
+                    }
+                    Repository.reset(args[1]);
                 default:
                     throw Utils.error("No command with that name exists.");
             }
