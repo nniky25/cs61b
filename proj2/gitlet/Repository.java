@@ -291,11 +291,6 @@ public class Repository implements Serializable {
 
         File fileName = join(CWD, rmFileName);
 
-        // Read File content as byte.
-        byte[] fileContent = readContents(fileName);
-        // serialized fileContent and get hash.
-        String fileHash = sha1(fileContent);
-
         Status status = readObject(STATUS, Status.class);
 
         /* Check Whether it is in add and remove staged area. */
@@ -321,6 +316,10 @@ public class Repository implements Serializable {
         boolean hasKey = headCommit.getMap().containsKey(rmFileName);
 
         if (hasKey) {
+            // Read file hash form commit.
+            Map<String, String> headMap = headCommit.getMap();
+            String fileHash = headMap.get(rmFileName);
+            
             if (!hasKeyInAdd) {
                 if (!hadKeyInRem) {
                     stagedRem.put(rmFileName, fileHash);
