@@ -138,6 +138,17 @@ public class Repository implements Serializable {
 
         Commit headCommit = readObject(headFile, Commit.class);
 
+        // Check remStage.
+        Map<String, String> remMap = area.getStagedRem();
+        if (remMap.containsKey(file)) {
+            if (remMap.get(file).equals(hash)) {
+                remMap.remove(file);
+                writeObject(STAGING, area);
+                status.remRemovedFiles(file);
+                writeObject(STATUS, status);
+                return;
+            }
+        }
         // Check
         boolean hasKey = headCommit.getMap().containsKey(file);
         if (hasKey) {
@@ -573,6 +584,7 @@ public class Repository implements Serializable {
         // Clean CWE except "gitlet" and ".gitlet".
         for (int i = 0; i < fileList.size(); i++) {
             if (fileList.get(i).equals(".gitlet") || fileList.get(i).equals("gitlet")) {
+                return;
             } else {
                 // Clean files.
                 File currentFile = join(CWD, fileList.get(i));

@@ -21,6 +21,10 @@ public class Status implements Serializable {
         branches.remove(branch);
     }
 
+    public void remRemovedFiles(String fileName) {
+        removedFiles.remove(fileName);
+    }
+
     /* Add the file to stagedFiles and remove it from removeFiles if be added before. */
     public void addStagedFile(String fileName) {
         stagedFiles.add(fileName);

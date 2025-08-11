@@ -43,7 +43,8 @@ public class Main {
                     String message = args[1];
                     // when the message is "".
                     if (message.trim().isEmpty()) {
-                        throw Utils.error("Please enter a message.");
+                        System.out.println("Please enter a message.");
+                        break;
                     }
                     Repository.commit(args[1]);
                     break;
@@ -86,13 +87,15 @@ public class Main {
                     }
                     else if (args.length == 3) {
                         if (!args[1].equals("--")) {
-                            throw Utils.error("second should be '--'.");
+                            System.out.println("Incorrect operands.");
+                            break;
                         }
                         Repository.checkout1(args[2]);
                     }
                     else if (args.length == 4) {
                         if (!args[2].equals("--")) {
-                            throw Utils.error("second should be '--'.");
+                            System.out.println("Incorrect operands.");
+                            break;
                         }
                         Repository.checkout2(args[3], args[1]);
                     }
