@@ -3,6 +3,9 @@ package gitlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static gitlet.Utils.*;
@@ -74,7 +77,8 @@ public class Repository implements Serializable {
         } else {
             throw error("A Gitlet version-control system already exists in the current directory.");
         }
-        Commit init = new Commit("initial commit", "00:00:00 UTC, Thursday, 1 January 1970", null);
+        Instant now = Instant.now();;
+        Commit init = new Commit("initial commit",  now, null);
 
         // Save new commit to COMMIT directory.
         updateCommit(init);
@@ -162,7 +166,7 @@ public class Repository implements Serializable {
         String headHash = readContentsAsString(HEAD);
 
         // New date
-        String currentDate = new Date().toString();
+        Instant now = Instant.now();
 
         // Get staging Area
         StagingArea Area = readObject(STAGING, StagingArea.class);
@@ -171,7 +175,7 @@ public class Repository implements Serializable {
 
 
         /* Update current commit Object. */
-        currentCommit.changeDate(currentDate);
+        currentCommit.changeDate(now);
         currentCommit.changeMessage(message);
         currentCommit.changeParentHash1(headHash);
         Map<String, String> currentCommitMap = currentCommit.getMap();
@@ -372,25 +376,29 @@ public class Repository implements Serializable {
         }
 
         Commit currentCommit = readObject(currentFile, Commit.class);
-        String date = currentCommit.getDate();
+        Instant date = currentCommit.getDate();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MMM d HH:mm:ss yyyy Z",
+                Locale.US).withZone(ZoneId.systemDefault());
+        String formattedTime = formatter.format(date);
         String parentHash1 = currentCommit.getParentHash1();
         String parentHash2 = currentCommit.getParentHash2();
         String message = currentCommit.getMessage();
         if (parentHash2 == null) {
-            System.out.println("===");
-            System.out.println("commit " + fileName);
-            System.out.println("Date:" + date);
-            System.out.println(message);
+            message("===");
+            message("commit " + fileName);
+            message("Date: %s", formattedTime);
+            message(message);
             System.out.println();
         } else {
             String first = parentHash1.substring(0, 7);
             String second = parentHash2.substring(0, 7);
 
-            System.out.println("===");
-            System.out.println("commit " + fileName);
-            System.out.println("Merge: " + first + " " + second);
-            System.out.println("Date:" + date);
-            System.out.println("Merged development into master.");
+            message("===");
+            message("commit " + fileName);
+            message("Merge: " + first + " " + second);
+            message("Date: %s", formattedTime);
+            message("Merged development into master.");
+            System.out.println();
         }
 
         return parentHash1;
@@ -404,33 +412,33 @@ public class Repository implements Serializable {
         Set<String> removedFiles = status.getRemovedFiles();
         String currentBranch = status.getCurrentBranch();
 
-        System.out.println("=== Branches ===");
+        message("=== Branches ===");
         for (String item : branches) {
             if (item.equals(currentBranch)) {
-                System.out.println("*" + item);
+                message("*" + item);
             } else {
-                System.out.println(item);
+                message(item);
 
             }
         }
         System.out.println();
 
-        System.out.println("=== Staged Files ===");
+        message("=== Staged Files ===");
         for (String item : stagedFiles) {
-            System.out.println(item);
+            message(item);
         }
         System.out.println();
 
         System.out.println("=== Removed Files ===");
         for (String item : removedFiles) {
-            System.out.println(item);
+            message(item);
         }
         System.out.println();
 
-        System.out.println("=== Modifications Not Staged For Commit ===");
+        message("=== Modifications Not Staged For Commit ===");
         System.out.println();
 
-        System.out.println("=== Untracked Files ===");
+        message("=== Untracked Files ===");
         System.out.println();
     }
 

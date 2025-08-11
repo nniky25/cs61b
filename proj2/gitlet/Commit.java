@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.util.*;
 
 import static gitlet.Utils.*;
+import java.time.Instant;
 // TODO: You'll likely use this in this class
 
 /** Represents a gitlet commit object.
@@ -23,7 +24,7 @@ public class Commit implements Serializable {
      * variable is used. We've provided one example for `message`.
      */
     /** The date, parentHash1 is master, parentHash2 is main, message, Blob of this Commit. */
-    private String date;
+    private Instant date;
     private String parentHash1;
     private String parentHash2;
     //private String nextCommitHash;
@@ -31,7 +32,7 @@ public class Commit implements Serializable {
     private Map<String, String> table = new HashMap<>();
 
     /** Implement Constructor */
-    public Commit(String message, String date, String parentHash) {
+    public Commit(String message, Instant date, String parentHash) {
         this.date = date;
         this.message = message;
         this.parentHash1 = parentHash;
@@ -51,7 +52,7 @@ public class Commit implements Serializable {
         return table;
     }
 
-    public String getDate() {
+    public Instant getDate() {
         return date;
     }
 
@@ -67,7 +68,7 @@ public class Commit implements Serializable {
         return message;
     }
 
-    public void changeDate(String currentDate) {
+    public void changeDate(Instant currentDate) {
         this.date = currentDate;
     }
 

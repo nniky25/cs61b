@@ -13,28 +13,24 @@ public class Main {
      */
     public static void correct(String errorMessage, String[] args) {
         if (args.length == 1) {
-            System.out.println(errorMessage);
-            System.exit(0);
+            throw Utils.error(errorMessage);
         }
         if (args.length > 2) {
-            System.out.println("Wrong args length.");
-            System.exit(0);
+            throw Utils.error("Wrong args length.");
         }
     }
 
     public static void main(String[] args) {
         try {
             if (args.length == 0) {
-                System.out.println("Please enter a command.");
-                System.exit(0);
+                throw Utils.error("Please enter a command.");
             }
 
             String firstArg = args[0];
             switch(firstArg) {
                 case "init":
                     if (args.length != 1) {
-                        System.out.println("Wrong args length.");
-                        System.exit(0);
+                        throw Utils.error("Wrong args length.");
                     }
                     Repository.setupPersistence();
                     break;
@@ -52,15 +48,13 @@ public class Main {
                     break;
                 case "log":
                     if (args.length != 1) {
-                        System.out.println("Wrong args length.");
-                        System.exit(0);
+                        throw Utils.error("Wrong args length.");
                     }
                     Repository.log();
                     break;
                 case "global-log":
                     if (args.length != 1) {
-                        System.out.println("Wrong args length.");
-                        System.exit(0);
+                        throw Utils.error("Wrong args length.");
                     }
                     Repository.globalLog();
                     break;
@@ -70,8 +64,7 @@ public class Main {
                     break;
                 case "status":
                     if (args.length != 1) {
-                        System.out.println("Wrong args length.");
-                        System.exit(0);
+                        throw Utils.error("Wrong args length.");
                     }
                     Repository.status();
                     break;
@@ -81,41 +74,36 @@ public class Main {
                     break;
                 case "checkout":
                     if (args.length == 1) {
-                        System.out.println("please enter check message.");
-                        System.exit(0);
+                        throw Utils.error("please enter check message.");
                     }
                     if (args.length == 2) {
                         Repository.checkBranch(args[1]);
                     }
                     else if (args.length == 3) {
                         if (!args[1].equals("--")) {
-                            System.out.println("second should be '--'.");
-                            System.exit(0);
+                            throw Utils.error("second should be '--'.");
                         }
                         Repository.checkout1(args[2]);
                     }
                     else if (args.length == 4) {
                         if (!args[2].equals("--")) {
-                            System.out.println("second should be '--'.");
-                            System.exit(0);
+                            throw Utils.error("second should be '--'.");
                         }
-                        Repository.checkout2(args[1], args[3]);
+                        Repository.checkout2(args[3], args[1]);
                     }
                     break;
                 case "rm-branch":
                     if (args.length != 2) {
-                        System.out.println("Wrong args length.");
-                        System.exit(0);
+                        throw Utils.error("Wrong args length.");
                     }
                     Repository.remBranch(args[1]);
                     break;
                 default:
-                    System.out.println("No command with that name exists.");
-                    System.exit(0);
+                    throw Utils.error("No command with that name exists.");
             }
         } catch (IOException e) {
             System.out.println("An IO error occurred: " + e.getMessage());
-            System.exit(1);
+            System.exit(1); // exit with error
         }
     }
 }
