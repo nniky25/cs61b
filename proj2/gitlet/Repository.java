@@ -650,7 +650,7 @@ public class Repository implements Serializable {
         }
 
         // Get fileList and head commit.
-        /** Commit headCommit = getHeadCommit();
+        Commit headCommit = getHeadCommit();
         Map<String, String> headMap = headCommit.getMap();
         List<String> fileList = plainFilenamesIn(CWD);
 
@@ -658,9 +658,8 @@ public class Repository implements Serializable {
             System.out.println("There is an untracked file "
                     + "in the way; delete it, or add and commit it first.");
             return;
-        } */
+        }
 
-        List<String> fileList = plainFilenamesIn(CWD);
         Map<String, String> map = currentCommit.getMap();
 
         // Clean and make files.
