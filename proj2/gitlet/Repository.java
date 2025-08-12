@@ -720,10 +720,5 @@ public class Repository implements Serializable {
             System.out.println("Current branch fast-forwarded.");
             return;
         }
-
-
-
-
-
     }
 }
