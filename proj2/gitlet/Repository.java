@@ -646,12 +646,11 @@ public class Repository implements Serializable {
     public static void reset(String commitHash) throws IOException {
         Commit currentCommit = getCommit(commitHash);
         if (currentCommit == null) {
-            System.out.println("No commit with that id exists.");
             return;
         }
 
         // Get fileList and head commit.
-        Commit headCommit = getHeadCommit();
+        /** Commit headCommit = getHeadCommit();
         Map<String, String> headMap = headCommit.getMap();
         List<String> fileList = plainFilenamesIn(CWD);
 
@@ -659,8 +658,9 @@ public class Repository implements Serializable {
             System.out.println("There is an untracked file "
                     + "in the way; delete it, or add and commit it first.");
             return;
-        }
+        } */
 
+        List<String> fileList = plainFilenamesIn(CWD);
         Map<String, String> map = currentCommit.getMap();
 
         // Clean and make files.
@@ -692,10 +692,10 @@ public class Repository implements Serializable {
         if (!area.isEmpty()) {
             System.out.println("You have uncommitted changes.");
             return;
-        } else if(!branches.contains(thisBranch)) {
+        } else if (!branches.contains(thisBranch)) {
             System.out.println("A branch with that name does not exist.");
             return;
-        } else if(status.getCurrentBranch().equals(thisBranch)) {
+        } else if (status.getCurrentBranch().equals(thisBranch)) {
             System.out.println("Cannot merge a branch with itself.");
             return;
         }
