@@ -27,4 +27,11 @@ public class StagingArea implements Serializable {
         stagedAdd.clear();
         stagedRem.clear();
     }
+
+    public boolean isEmpty() {
+        if (stagedAdd.isEmpty() && stagedRem.isEmpty()) {
+            return true;
+        }
+        return false;
+    }
 }

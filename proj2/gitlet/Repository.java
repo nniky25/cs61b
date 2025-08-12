@@ -319,7 +319,7 @@ public class Repository implements Serializable {
             // Read file hash form commit.
             Map<String, String> headMap = headCommit.getMap();
             String fileHash = headMap.get(rmFileName);
-            
+
             if (!hasKeyInAdd) {
                 if (!hadKeyInRem) {
                     stagedRem.put(rmFileName, fileHash);
@@ -441,6 +441,11 @@ public class Repository implements Serializable {
     }
 
     public static void status() {
+        if (!GITLET_DIR.exists()) {
+            System.out.println("Not in an initialized Gitlet directory.");
+            return;
+        }
+
         // Get status object.
         Status status = readObject(STATUS, Status.class);
         Set<String> branches = status.getBranches();
@@ -490,9 +495,10 @@ public class Repository implements Serializable {
             return;
         }
 
-        // Add new branch to status and update SPLIT.
+        // Add new branch and splitHash to status and update SPLIT.
         branches.add(branch);
         String headHash = readContentsAsString(HEAD);
+        status.addSplitHash(headHash);
         writeObject(STATUS, status);
         writeContents(SPLIT, headHash);
     }
@@ -631,7 +637,7 @@ public class Repository implements Serializable {
             System.out.println("Cannot remove the current branch.");
             return;
         }
-        // Change current thisBranch to null
+        // Change current thisBranch
         status.remBranch(thisBranch);
         // Write status
         writeObject(STATUS, status);
@@ -640,9 +646,20 @@ public class Repository implements Serializable {
     public static void reset(String commitHash) throws IOException {
         Commit currentCommit = getCommit(commitHash);
         if (currentCommit == null) {
+            System.out.println("No commit with that id exists.");
             return;
         }
+
+        // Get fileList and head commit.
+        Commit headCommit = getHeadCommit();
+        Map<String, String> headMap = headCommit.getMap();
         List<String> fileList = plainFilenamesIn(CWD);
+
+        if (headMap.size() != fileList.size()) {
+            System.out.println("There is an untracked file "
+                    + "in the way; delete it, or add and commit it first.");
+            return;
+        }
 
         Map<String, String> map = currentCommit.getMap();
 
@@ -655,5 +672,58 @@ public class Repository implements Serializable {
         writeObject(STAGING, area);
         // Write head.
         writeContents(HEAD, commitHash);
+    }
+
+    public void merge(String thisBranch) {
+        /* Check before merge. */
+        // Get a status object.
+        Status status = readObject(STATUS, Status.class);
+        Set<String> branches = status.getBranches();
+
+        // Get area.
+        StagingArea area = readObject(STAGING, StagingArea.class);
+
+        // Get fileList and head commit.
+        Commit headCommit = getHeadCommit();
+        List<String> fileList = plainFilenamesIn(CWD);
+        Map<String, String> headMap = headCommit.getMap();
+
+        // Check station.
+        if (!area.isEmpty()) {
+            System.out.println("You have uncommitted changes.");
+            return;
+        } else if(!branches.contains(thisBranch)) {
+            System.out.println("A branch with that name does not exist.");
+            return;
+        } else if(status.getCurrentBranch().equals(thisBranch)) {
+            System.out.println("Cannot merge a branch with itself.");
+            return;
+        }
+
+        if (headMap.size() != fileList.size()) {
+            System.out.println("There is an untracked file "
+                    + "in the way; delete it, or add and commit it first.");
+            return;
+        }
+
+        /* Merge. */
+        // Get splitHash, headHash and given branch Hash.
+        String splitHash = status.getSplitHash();
+        String headHash = readContentsAsString(HEAD);
+        String branchHash = readContentsAsString(SPLIT);
+
+        // Check station.
+        if (splitHash.equals(branchHash)) {
+            System.out.println("Given branch is an ancestor of the current branch.");
+            return;
+        } else if (splitHash.equals(headHash)) {
+            System.out.println("Current branch fast-forwarded.");
+            return;
+        }
+
+
+
+
+
     }
 }

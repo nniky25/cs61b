@@ -23,7 +23,8 @@ public class Main {
     public static void main(String[] args) {
         try {
             if (args.length == 0) {
-                throw Utils.error("Please enter a command.");
+                System.out.println("Please enter a command.");
+                return;
             }
 
             String firstArg = args[0];
@@ -113,7 +114,7 @@ public class Main {
                     Repository.reset(args[1]);
                     break;
                 default:
-                    throw Utils.error("No command with that name exists.");
+                    System.out.println("No command with that name exists.");
             }
         } catch (IOException e) {
             System.out.println("An IO error occurred: " + e.getMessage());
