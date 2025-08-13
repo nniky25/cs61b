@@ -545,31 +545,43 @@ public class Repository implements Serializable {
     }
 
     public static void checkBranch(String thisBranch) throws IOException {
+        // Get branches
         Status status = readObject(STATUS, Status.class);
         Set<String> branches = status.getBranches();
+
+        // Get headMap
         Commit headCommit = getHeadCommit();
-        List<String> fileList = plainFilenamesIn(CWD);
         Map<String, String> headMap = headCommit.getMap();
 
+        // Get fileList
+        List<String> fileList = plainFilenamesIn(CWD);
+
+        // Get splitMap
+        String splitHash = readContentsAsString(SPLIT);
+        Commit splitCommit = getCommit(splitHash);
+        if (splitCommit == null) {
+            return;
+        }
+        Map<String, String> splitMap = splitCommit.getMap();
+
+        /* If a working file is untracked in the current branch and would
+         * be overwritten by the checkout, print There is an untracked file
+         * in the way; delete it, or add and commit it first.
+         */
         if (!branches.contains(thisBranch)) {
             System.out.println("No such branch exists.");
             return;
         } else if (thisBranch.equals(status.getCurrentBranch())) {
             System.out.println("No need to checkout the current branch.");
             return;
-        } else if (headMap.size() != fileList.size()) {
-            System.out.println("There is an untracked file "
-                    + "in the way; delete it, or add and commit it first.");
-            return;
         }
-
-        String splitHash = readContentsAsString(SPLIT);
-        Commit splitCommit = getCommit(splitHash);
-        if (splitCommit == null) {
-            return;
+        for (int i = 0; i < fileList.size(); i++) {
+            if (!headMap.containsKey(fileList.get(i)) && splitMap.containsKey(i)) {
+                System.out.println("There is an untracked file "
+                        + "in the way; delete it, or add and commit it first.");
+                return;
+            }
         }
-
-        Map<String, String> splitMap = splitCommit.getMap();
 
         // Change this thisBranch to current thisBranch.
         status.changeCurrentBranch(thisBranch);
@@ -662,7 +674,7 @@ public class Repository implements Serializable {
         StagingArea area = readObject(STAGING, StagingArea.class);
         Map<String, String> stagedAdd = area.getStagedAdd();
 
-        /* 1. Travers to find the files in the current commit map but no in head commit.
+        /* 1. Travers to find the files in the current commit map but not in head commit.
          * and create a list to store them, then to find untracked files.
          * 2. Find the files are tracked by head commit but untracked by current commit.
          * and delect them on WD.
