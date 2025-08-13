@@ -611,8 +611,8 @@ public class Repository implements Serializable {
             String value = entry.getValue();
             // Create and write to files.
             File currentFile = join(CWD, key);
-            if (!currentFile.createNewFile()) {
-                throw new IOException("fail to create" + currentFile.getAbsolutePath());
+            if (!currentFile.exists()) {
+                currentFile.createNewFile();
             }
 
             // Get files from BLOB, then write content to new files.
