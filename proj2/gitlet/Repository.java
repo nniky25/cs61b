@@ -882,124 +882,133 @@ public class Repository implements Serializable {
             String head = value.getHeadHash();
             String branch = value.branchHash();
 
-            if (!Objects.equals(head, split) && Objects.equals(head, branch)) {
-                File file = join(CWD, key);
+            if (!Objects.equals(head, null) && !Objects.equals(split, null) &&
+                    !Objects.equals(head, null)) {
+                if (!Objects.equals(head, split) && Objects.equals(head, branch)) {
+                    File file = join(CWD, key);
 
-                // Get the file from BLOB, then write content to the file.
-                File blobFile = join(BLOB, branch);
-                Blob fileBlob = readObject(blobFile, Blob.class);
-                byte[] fileContent = fileBlob.getContent();
-                writeContents(file, fileContent);
-                // update area and status.
-                area.updateAdd(key, branch);
-                status.addStagedFile(key);
-            } else if (!Objects.equals(head, split) && Objects.equals(branch, split)) {
-                continue;
-            } else if (head.equals(branch)) {
-                continue;
-            } else if (Objects.equals(split, null) && !Objects.equals(head, null) && Objects.equals(branch, null)) {
-                // Create the file in master.
-                File file = join(CWD, key);
-                if (!file.createNewFile()) {
-                    throw new IOException("fail to create" + file.getAbsolutePath());
+                    // Get the file from BLOB, then write content to the file.
+                    File blobFile = join(BLOB, branch);
+                    Blob fileBlob = readObject(blobFile, Blob.class);
+                    byte[] fileContent = fileBlob.getContent();
+                    writeContents(file, fileContent);
+                    // update area and status.
+                    area.updateAdd(key, branch);
+                    status.addStagedFile(key);
+                } else if (!Objects.equals(head, split) && Objects.equals(branch, split)) {
+                    continue;
+                } else if (Objects.equals(head, branch)) {
+                    continue;
                 }
-            } else if (Objects.equals(split, null) && Objects.equals(head, null) && !Objects.equals(branch, null)) {
-                // Create the file in thisBranch.
-                File file = join(CWD, key);
-                if (!file.createNewFile()) {
-                    throw new IOException("fail to create" + file.getAbsolutePath());
-                }
-                // update area and status.
-                area.updateAdd(key, branch);
-                status.addStagedFile(key);
-            } else if (!Objects.equals(split, null) && Objects.equals(head, split) && Objects.equals(branch, null)) {
-                // rm the file in master.
-                rm(key);
-            } else if (!Objects.equals(split, null) && Objects.equals(branch, split) && Objects.equals(head, null)) {
-                continue;
             } else {
-                File file = join(CWD, key);
-                if (!file.exists()) {
+                if (Objects.equals(split, null) && !Objects.equals(head, null) &&
+                        Objects.equals(branch, null)) {
+                    // Create the file in master.
+                    File file = join(CWD, key);
                     if (!file.createNewFile()) {
                         throw new IOException("fail to create" + file.getAbsolutePath());
                     }
-                }
-                // Get files from BLOB, then write content to new files.
-                String fileContent1;
-                File blobFile1 = join(BLOB, head);
-                if (blobFile1.exists()) {
-                    Blob blob1 = readObject(blobFile1, Blob.class);
-                    fileContent1 = Arrays.toString(blob1.getContent());
+                } else if (Objects.equals(split, null) && Objects.equals(head, null) &&
+                        !Objects.equals(branch, null)) {
+                    // Create the file in thisBranch.
+                    File file = join(CWD, key);
+                    if (!file.createNewFile()) {
+                        throw new IOException("fail to create" + file.getAbsolutePath());
+                    }
+                    // update area and status.
+                    area.updateAdd(key, branch);
+                    status.addStagedFile(key);
+                } else if (!Objects.equals(split, null) && Objects.equals(head, split) &&
+                        Objects.equals(branch, null)) {
+                    // rm the file in master.
+                    rm(key);
+                } else if (!Objects.equals(split, null) && Objects.equals(branch, split) &&
+                        Objects.equals(head, null)) {
+                    continue;
                 } else {
-                    fileContent1 = null;
+                    File file = join(CWD, key);
+                    if (!file.exists()) {
+                        if (!file.createNewFile()) {
+                            throw new IOException("fail to create" + file.getAbsolutePath());
+                        }
+                    }
+                    // Get files from BLOB, then write content to new files.
+                    String fileContent1;
+                    File blobFile1 = join(BLOB, head);
+                    if (blobFile1.exists()) {
+                        Blob blob1 = readObject(blobFile1, Blob.class);
+                        fileContent1 = Arrays.toString(blob1.getContent());
+                    } else {
+                        fileContent1 = null;
+                    }
+
+
+                    String fileContent2;
+                    File blobFile2 = join(BLOB, branch);
+                    if (blobFile2.exists()) {
+                        Blob blob2 = readObject(blobFile2, Blob.class);
+                        fileContent2 = Arrays.toString(blob2.getContent());
+                    } else {
+                        fileContent2 = null;
+                    }
+
+                    String a = "<<<<<<< HEAD" + "\n";
+                    String b = "=======" + "\n";
+                    String c = ">>>>>>>";
+                    String finalContents = a + fileContent1 + "\n" + b + fileContent2 + "\n" + c;
+                    writeContents(file, finalContents);
+                    area.updateAdd(key, branch);
+                    status.addStagedFile(key);
+                    conflict = true;
                 }
-
-
-                String fileContent2;
-                File blobFile2 = join(BLOB, branch);
-                if (blobFile2.exists()) {
-                    Blob blob2 = readObject(blobFile2, Blob.class);
-                    fileContent2 = Arrays.toString(blob2.getContent());
-                } else {
-                    fileContent2 = null;
-                }
-
-                String a = "<<<<<<< HEAD" + "\n";
-                String b = "=======" + "\n";
-                String c = ">>>>>>>";
-                String finalContents = a + fileContent1 + "\n" + b + fileContent2 + "\n" + c;
-                writeContents(file, finalContents);
-                area.updateAdd(key, branch);
-                status.addStagedFile(key);
-                conflict = true;
             }
         }
         return conflict;
     }
 
-    public static Map<String, MergeHelper> files() {
-        // Get splitMap.
-        String splitHash = readContentsAsString(SPLIT);
-        Commit splitCommit = getCommit(splitHash);
-        Map<String, String> splitMap = splitCommit.getMap();
+        public static Map<String, MergeHelper> files () {
+            // Get splitMap.
+            String splitHash = readContentsAsString(SPLIT);
+            Commit splitCommit = getCommit(splitHash);
+            Map<String, String> splitMap = splitCommit.getMap();
 
-        // Get headMap
-        Commit headCommit = getHeadCommit();
-        Map<String, String> headMap = headCommit.getMap();
+            // Get headMap
+            Commit headCommit = getHeadCommit();
+            Map<String, String> headMap = headCommit.getMap();
 
-        // Get another branch headMap
-        Status status = readObject(STATUS, Status.class);
-        String branchHeadHash = status.getSplitHash();
-        Commit branchHeadCommit = getCommit(branchHeadHash);
-        Map<String, String> branchMap = branchHeadCommit.getMap();
+            // Get another branch headMap
+            Status status = readObject(STATUS, Status.class);
+            String branchHeadHash = status.getSplitHash();
+            Commit branchHeadCommit = getCommit(branchHeadHash);
+            Map<String, String> branchMap = branchHeadCommit.getMap();
 
-        // Create a set to store files.
-        Set<String> files = new HashSet<>();
+            // Create a set to store files.
+            Set<String> files = new HashSet<>();
 
-        files = fillSet(files, splitMap);
-        files = fillSet(files, headMap);
-        files = fillSet(files, branchMap);
+            files = fillSet(files, splitMap);
+            files = fillSet(files, headMap);
+            files = fillSet(files, branchMap);
 
-        // Create a map to store fileName and its three blobs.
-        Map<String, MergeHelper> helper = new HashMap<>();
-        // Store.
-        for (String fileName : files) {
-            String split = splitMap.get(fileName);
-            String head = headMap.get(fileName);
-            String branch = headMap.get(fileName);
-            MergeHelper node = new MergeHelper(split, head, branch);
-            helper.put(fileName, node);
+            // Create a map to store fileName and its three blobs.
+            Map<String, MergeHelper> helper = new HashMap<>();
+            // Store.
+            for (String fileName : files) {
+                String split = splitMap.get(fileName);
+                String head = headMap.get(fileName);
+                String branch = headMap.get(fileName);
+                MergeHelper node = new MergeHelper(split, head, branch);
+                helper.put(fileName, node);
+            }
+
+            return helper;
         }
 
-        return helper;
-    }
-
-    public static Set<String> fillSet(Set<String> set,
-                                      Map<String, String> map) {
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            String key = entry.getKey();
-            set.add(key);
+        public static Set<String> fillSet(Set<String> set,
+                Map<String, String> map) {
+            for (Map.Entry<String, String> entry : map.entrySet()) {
+                String key = entry.getKey();
+                set.add(key);
+            }
+            return set;
         }
-        return set;
-    }
 }
