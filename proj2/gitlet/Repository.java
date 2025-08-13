@@ -803,7 +803,6 @@ public class Repository implements Serializable {
     }
 
     public static void merge(String thisBranch) throws IOException {
-        boolean conflict = false;
         /* Check before merge. */
         // Get a status object.
         String currentBranch = null;
@@ -860,6 +859,22 @@ public class Repository implements Serializable {
 
         Map<String, MergeHelper> helper = files();
 
+        boolean conflict = check(helper);
+        if (conflict) {
+            System.out.println("Encountered a merge conflict.");
+        }
+        commit("Merged " + thisBranch + " into" + currentBranch + ".", branchHash);
+    }
+
+    public static boolean check(Map<String, MergeHelper> helper) throws IOException {
+
+        boolean conflict = false;
+
+        // Get status
+        Status status = readObject(STATUS, Status.class);
+
+        // Get area.
+        StagingArea area = readObject(STAGING, StagingArea.class);
         for (Map.Entry<String, MergeHelper> entry : helper.entrySet()) {
             String key = entry.getKey();
             MergeHelper value = entry.getValue();
@@ -867,7 +882,7 @@ public class Repository implements Serializable {
             String head = value.getHeadHash();
             String branch = value.branchHash();
 
-            if (!head.equals(split) && head.equals(branch)) {
+            if (!Objects.equals(head, split) && Objects.equals(head, branch)) {
                 File file = join(CWD, key);
 
                 // Get the file from BLOB, then write content to the file.
@@ -878,17 +893,17 @@ public class Repository implements Serializable {
                 // update area and status.
                 area.updateAdd(key, branch);
                 status.addStagedFile(key);
-            } else if (!head.equals(split) && branch.equals(split)) {
+            } else if (!Objects.equals(head, split) && Objects.equals(branch, split)) {
                 continue;
             } else if (head.equals(branch)) {
                 continue;
-            } else if (split.equals(null) && !head.equals(null) && branch.equals(null)) {
+            } else if (Objects.equals(split, null) && !Objects.equals(head, null) && Objects.equals(branch, null)) {
                 // Create the file in master.
                 File file = join(CWD, key);
                 if (!file.createNewFile()) {
                     throw new IOException("fail to create" + file.getAbsolutePath());
                 }
-            } else if (split.equals(null) && head.equals(null) && !branch.equals(null)) {
+            } else if (Objects.equals(split, null) && Objects.equals(head, null) && !Objects.equals(branch, null)) {
                 // Create the file in thisBranch.
                 File file = join(CWD, key);
                 if (!file.createNewFile()) {
@@ -897,10 +912,10 @@ public class Repository implements Serializable {
                 // update area and status.
                 area.updateAdd(key, branch);
                 status.addStagedFile(key);
-            } else if (!split.equals(null) && head.equals(split) && branch.equals(null)) {
+            } else if (!Objects.equals(split, null) && Objects.equals(head, split) && Objects.equals(branch, null)) {
                 // rm the file in master.
                 rm(key);
-            } else if (!split.equals(null) && branch.equals(split) && head.equals(null)) {
+            } else if (!Objects.equals(split, null) && Objects.equals(branch, split) && Objects.equals(head, null)) {
                 continue;
             } else {
                 File file = join(CWD, key);
@@ -939,10 +954,7 @@ public class Repository implements Serializable {
                 conflict = true;
             }
         }
-        if (conflict) {
-            System.out.println("Encountered a merge conflict.");
-        }
-        commit("Merged " + thisBranch + " into" + currentBranch + ".", branchHash);
+        return conflict;
     }
 
     public static Map<String, MergeHelper> files() {
