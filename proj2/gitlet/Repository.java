@@ -249,6 +249,75 @@ public class Repository implements Serializable {
         writeObject(STAGING, area);
     }
 
+    /** Do commit and clear Area. */
+    public static void commit(String message,
+                              String parentHash2) throws IOException {
+
+        boolean changedTable = false;
+
+        if (!GITLET_DIR.exists()) {
+            System.exit(0);
+        }
+        // Get head commit object and head commit hash.
+        Commit currentCommit = getHeadCommit();
+        String headHash = readContentsAsString(HEAD);
+
+        // Get status
+        Status status = readObject(STATUS, Status.class);
+
+        // New date
+        Instant now = Instant.now();
+
+        // Get staging area
+        StagingArea area = readObject(STAGING, StagingArea.class);
+        Map<String, String> stagedAdd = area.getStagedAdd();
+        Map<String, String> stagedRem = area.getStagedRem();
+
+        /* Update current commit Object. */
+        currentCommit.changeDate(now);
+        currentCommit.changeMessage(message);
+        currentCommit.changeParentHash1(headHash);
+        currentCommit.changeParentHash2(parentHash2);
+        Map<String, String> currentCommitMap = currentCommit.getMap();
+
+        // Add to table
+        if (!stagedAdd.isEmpty()) {
+            for (Map.Entry<String, String> entry : stagedAdd.entrySet()) { // 遍历
+                String key = entry.getKey();
+                String value = entry.getValue();
+                currentCommitMap.put(key, value);
+
+            }
+            changedTable = true;
+        }
+
+        // Remove from table
+        if (!stagedRem.isEmpty()) {
+            for (Map.Entry<String, String> entry : stagedRem.entrySet()) { // 遍历
+                String key = entry.getKey();
+                String value = entry.getValue();
+                currentCommitMap.remove(key, value);
+
+            }
+            changedTable = true;
+        }
+
+        if (changedTable) {
+            // Save new commit to COMMIT directory.
+            updateCommit(currentCommit);
+            // Clean stage in status.
+            status.cleanStage();
+            // Write status to STATUS.
+            writeObject(STATUS, status);
+        } else {
+            message("No changes added to the commit.");
+        }
+        // Clear area
+        area.clearStagingArea();
+        // Write area and commit.
+        writeObject(STAGING, area);
+    }
+
     /** Add new Blob to BLOB directory. */
     public static void updateBlob(String fileHash, byte[] fileContent) throws IOException {
         File newBlob = join(BLOB, fileHash);
@@ -734,8 +803,10 @@ public class Repository implements Serializable {
     }
 
     public static void merge(String thisBranch) throws IOException {
+        boolean conflict = false;
         /* Check before merge. */
         // Get a status object.
+        String currentBranch = null;
         Status status = readObject(STATUS, Status.class);
         Set<String> branches = status.getBranches();
 
@@ -757,6 +828,12 @@ public class Repository implements Serializable {
         } else if (status.getCurrentBranch().equals(thisBranch)) {
             System.out.println("Cannot merge a branch with itself.");
             return;
+        }
+
+        for (String i : branches) {
+            if (!i.equals(status.getCurrentBranch())) {
+                currentBranch = i;
+            }
         }
 
         /**if (headMap.size() != fileList.size()) {
@@ -806,13 +883,66 @@ public class Repository implements Serializable {
             } else if (head.equals(branch)) {
                 continue;
             } else if (split.equals(null) && !head.equals(null) && branch.equals(null)) {
+                // Create the file in master.
                 File file = join(CWD, key);
                 if (!file.createNewFile()) {
                     throw new IOException("fail to create" + file.getAbsolutePath());
                 }
-            } else if ()
-        }
+            } else if (split.equals(null) && head.equals(null) && !branch.equals(null)) {
+                // Create the file in thisBranch.
+                File file = join(CWD, key);
+                if (!file.createNewFile()) {
+                    throw new IOException("fail to create" + file.getAbsolutePath());
+                }
+                // update area and status.
+                area.updateAdd(key, branch);
+                status.addStagedFile(key);
+            } else if (!split.equals(null) && head.equals(split) && branch.equals(null)) {
+                // rm the file in master.
+                rm(key);
+            } else if (!split.equals(null) && branch.equals(split) && head.equals(null)) {
+                continue;
+            } else {
+                File file = join(CWD, key);
+                if (!file.exists()) {
+                    if (!file.createNewFile()) {
+                        throw new IOException("fail to create" + file.getAbsolutePath());
+                    }
+                }
+                // Get files from BLOB, then write content to new files.
+                String fileContent1;
+                File blobFile1 = join(BLOB, head);
+                if (blobFile1.exists()) {
+                    Blob blob1 = readObject(blobFile1, Blob.class);
+                    fileContent1 = Arrays.toString(blob1.getContent());
+                } else {
+                    fileContent1 = null;
+                }
 
+
+                String fileContent2;
+                File blobFile2 = join(BLOB, branch);
+                if (blobFile2.exists()) {
+                    Blob blob2 = readObject(blobFile2, Blob.class);
+                    fileContent2 = Arrays.toString(blob2.getContent());
+                } else {
+                    fileContent2 = null;
+                }
+
+                String a = "<<<<<<< HEAD" + "\n";
+                String b = "=======" + "\n";
+                String c = ">>>>>>>";
+                String finalContents = a + fileContent1 + "\n" + b + fileContent2 + "\n" + c;
+                writeContents(file, finalContents);
+                area.updateAdd(key, branch);
+                status.addStagedFile(key);
+                conflict = true;
+            }
+        }
+        if (conflict) {
+            System.out.println("Encountered a merge conflict.");
+        }
+        commit("Merged " + thisBranch + " into" + currentBranch + ".", branchHash);
     }
 
     public static Map<String, MergeHelper> files() {

@@ -113,6 +113,11 @@ public class Main {
                     }
                     Repository.reset(args[1]);
                     break;
+                case "merge":
+                    if (args.length != 2) {
+                        throw Utils.error("Wrong args length.");
+                    }
+                    Repository.merge(args[1]);
                 default:
                     System.out.println("No command with that name exists.");
             }
