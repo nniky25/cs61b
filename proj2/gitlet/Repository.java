@@ -733,7 +733,7 @@ public class Repository implements Serializable {
         writeContents(HEAD, commitHash);
     }
 
-    public static void merge(String thisBranch) {
+    public static void merge(String thisBranch) throws IOException {
         /* Check before merge. */
         // Get a status object.
         Status status = readObject(STATUS, Status.class);
@@ -759,11 +759,11 @@ public class Repository implements Serializable {
             return;
         }
 
-        if (headMap.size() != fileList.size()) {
+        /**if (headMap.size() != fileList.size()) {
             System.out.println("There is an untracked file "
                     + "in the way; delete it, or add and commit it first.");
             return;
-        }
+        }*/
 
         /* Merge. */
         // Get splitHash, headHash and given branch Hash.
@@ -776,8 +776,88 @@ public class Repository implements Serializable {
             System.out.println("Given branch is an ancestor of the current branch.");
             return;
         } else if (splitHash.equals(headHash)) {
+            checkBranch(thisBranch);
             System.out.println("Current branch fast-forwarded.");
             return;
         }
+
+        Map<String, MergeHelper> helper = files();
+
+        for (Map.Entry<String, MergeHelper> entry : helper.entrySet()) {
+            String key = entry.getKey();
+            MergeHelper value = entry.getValue();
+            String split = value.getSplitHash();
+            String head = value.getHeadHash();
+            String branch = value.branchHash();
+
+            if (!head.equals(split) && head.equals(branch)) {
+                File file = join(CWD, key);
+
+                // Get the file from BLOB, then write content to the file.
+                File blobFile = join(BLOB, branch);
+                Blob fileBlob = readObject(blobFile, Blob.class);
+                byte[] fileContent = fileBlob.getContent();
+                writeContents(file, fileContent);
+                // update area and status.
+                area.updateAdd(key, branch);
+                status.addStagedFile(key);
+            } else if (!head.equals(split) && branch.equals(split)) {
+                continue;
+            } else if (head.equals(branch)) {
+                continue;
+            } else if (split.equals(null) && !head.equals(null) && branch.equals(null)) {
+                File file = join(CWD, key);
+                if (!file.createNewFile()) {
+                    throw new IOException("fail to create" + file.getAbsolutePath());
+                }
+            } else if ()
+        }
+
+    }
+
+    public static Map<String, MergeHelper> files() {
+        // Get splitMap.
+        String splitHash = readContentsAsString(SPLIT);
+        Commit splitCommit = getCommit(splitHash);
+        Map<String, String> splitMap = splitCommit.getMap();
+
+        // Get headMap
+        Commit headCommit = getHeadCommit();
+        Map<String, String> headMap = headCommit.getMap();
+
+        // Get another branch headMap
+        Status status = readObject(STATUS, Status.class);
+        String branchHeadHash = status.getSplitHash();
+        Commit branchHeadCommit = getCommit(branchHeadHash);
+        Map<String, String> branchMap = branchHeadCommit.getMap();
+
+        // Create a set to store files.
+        Set<String> files = new HashSet<>();
+
+        files = fillSet(files, splitMap);
+        files = fillSet(files, headMap);
+        files = fillSet(files, branchMap);
+
+        // Create a map to store fileName and its three blobs.
+        Map<String, MergeHelper> helper = new HashMap<>();
+        // Store.
+        for (String fileName : files) {
+            String split = splitMap.get(fileName);
+            String head = headMap.get(fileName);
+            String branch = headMap.get(fileName);
+            MergeHelper node = new MergeHelper(split, head, branch);
+            helper.put(fileName, node);
+        }
+
+        return helper;
+    }
+
+    public static Set<String> fillSet(Set<String> set,
+                                      Map<String, String> map) {
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            String key = entry.getKey();
+            set.add(key);
+        }
+        return set;
     }
 }
