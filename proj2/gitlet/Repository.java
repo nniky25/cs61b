@@ -644,28 +644,65 @@ public class Repository implements Serializable {
     }
 
     public static void reset(String commitHash) throws IOException {
+        // Get current commit map.
         Commit currentCommit = getCommit(commitHash);
         if (currentCommit == null) {
             return;
         }
+        Map<String, String> commitMap = currentCommit.getMap();
 
         // Get fileList and head commit.
         Commit headCommit = getHeadCommit();
         Map<String, String> headMap = headCommit.getMap();
+
+        // Get WD files.
         List<String> fileList = plainFilenamesIn(CWD);
 
-        if (headMap.size() != fileList.size()) {
-            System.out.println("There is an untracked file "
-                    + "in the way; delete it, or add and commit it first.");
-            return;
+        // Get stagedAdd map.
+        StagingArea area = readObject(STAGING, StagingArea.class);
+        Map<String, String> stagedAdd = area.getStagedAdd();
+
+        /* 1. Travers to find the files in the current commit map but no in head commit.
+         * and create a list to store them, then to find untracked files.
+         * 2. Find the files are tracked by head commit but untracked by current commit.
+         * and delect them on WD.
+         */
+        List<String> firstList = new ArrayList<>();
+
+        // full firstList.
+        for (Map.Entry<String, String> entry : commitMap.entrySet()) {
+            String key = entry.getKey();
+            // Do 1
+            if (!headMap.containsKey(key)) {
+                firstList.add(key);
+            }
         }
 
-        Map<String, String> map = currentCommit.getMap();
+        // find untracked files and return.
+        for (String i : firstList) {
+            for (String j : fileList) {
+                if (i.equals(j) && !stagedAdd.containsKey(i)) {
+                    System.out.println("There is an untracked file "
+                            + "in the way; delete it, or add and commit it first.");
+                    return;
+                }
+            }
+        }
+
+        // Do 2
+        List<String> delectFile = new ArrayList<>();
+
+        for (Map.Entry<String, String> entry : headMap.entrySet()) {
+            String key = entry.getKey();
+            // Do 1
+            if (!commitMap.containsKey(key)) {
+                delectFile.add(key);
+            }
+        }
 
         // Clean and make files.
-        cleanCWDandMakeFiles(map, fileList);
+        cleanCWDandMakeFiles(commitMap, delectFile);
         // Clear area.
-        StagingArea area = readObject(STAGING, StagingArea.class);
         area.clearStagingArea();
         // Write area.
         writeObject(STAGING, area);
@@ -673,7 +710,7 @@ public class Repository implements Serializable {
         writeContents(HEAD, commitHash);
     }
 
-    public void merge(String thisBranch) {
+    public static void merge(String thisBranch) {
         /* Check before merge. */
         // Get a status object.
         Status status = readObject(STATUS, Status.class);
