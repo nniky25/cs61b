@@ -556,14 +556,6 @@ public class Repository implements Serializable {
         // Get fileList
         List<String> fileList = plainFilenamesIn(CWD);
 
-        // Get splitMap
-        String splitHash = readContentsAsString(SPLIT);
-        Commit splitCommit = getCommit(splitHash);
-        if (splitCommit == null) {
-            return;
-        }
-        Map<String, String> splitMap = splitCommit.getMap();
-
         /* If a working file is untracked in the current branch and would
          * be overwritten by the checkout, print There is an untracked file
          * in the way; delete it, or add and commit it first.
@@ -575,6 +567,14 @@ public class Repository implements Serializable {
             System.out.println("No need to checkout the current branch.");
             return;
         }
+        // Get splitMap
+        String splitHash = readContentsAsString(SPLIT);
+        Commit splitCommit = getCommit(splitHash);
+        if (splitCommit == null) {
+            return;
+        }
+        Map<String, String> splitMap = splitCommit.getMap();
+        
         for (int i = 0; i < fileList.size(); i++) {
             if (!headMap.containsKey(fileList.get(i)) && splitMap.containsKey(i)) {
                 System.out.println("There is an untracked file "
