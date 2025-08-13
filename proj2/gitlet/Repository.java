@@ -574,7 +574,7 @@ public class Repository implements Serializable {
             return;
         }
         Map<String, String> splitMap = splitCommit.getMap();
-        
+
         for (int i = 0; i < fileList.size(); i++) {
             if (!headMap.containsKey(fileList.get(i)) && splitMap.containsKey(i)) {
                 System.out.println("There is an untracked file "
@@ -582,6 +582,17 @@ public class Repository implements Serializable {
                 return;
             }
         }
+
+        List<String> delectFile = new ArrayList<>();
+
+        for (Map.Entry<String, String> entry : headMap.entrySet()) {
+            String key = entry.getKey();
+            // Do 1
+            if (!splitMap.containsKey(key)) {
+                delectFile.add(key);
+            }
+        }
+
 
         // Change this thisBranch to current thisBranch.
         status.changeCurrentBranch(thisBranch);
@@ -592,7 +603,7 @@ public class Repository implements Serializable {
         writeContents(HEAD, splitHash);
 
         // Clean CWD and make files.
-        cleanCWDandMakeFiles(splitMap, fileList);
+        cleanCWDandMakeFiles(splitMap, delectFile);
 
         // Write status.
         writeObject(STATUS, status);
