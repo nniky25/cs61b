@@ -576,7 +576,7 @@ public class Repository implements Serializable {
         Map<String, String> splitMap = splitCommit.getMap();
 
         for (int i = 0; i < fileList.size(); i++) {
-            if (!headMap.containsKey(fileList.get(i)) && splitMap.containsKey(i)) {
+            if (!headMap.containsKey(fileList.get(i)) && splitMap.containsKey(fileList.get(i))) {
                 System.out.println("There is an untracked file "
                         + "in the way; delete it, or add and commit it first.");
                 return;
