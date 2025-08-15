@@ -825,7 +825,7 @@ public class Repository implements Serializable {
         } else if (!branches.contains(thisBranch)) {
             System.out.println("A branch with that name does not exist.");
             return;
-        } else if (currentbranch.equals(thisBranch)) {
+        } else if (currentBranch.equals(thisBranch)) {
             System.out.println("Cannot merge a branch with itself.");
             return;
         }
