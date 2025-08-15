@@ -6,7 +6,7 @@ import java.util.*;
 /** Show status of gitlit. */
 public class Status implements Serializable {
     private String currentBranch;
-    private String splitHash;
+    private Map<String, String> splitHash;
     private Set<String> branches = new TreeSet<>();
     private Set<String> stagedFiles = new TreeSet<>();
     private Set<String> removedFiles = new TreeSet<>();
@@ -18,12 +18,16 @@ public class Status implements Serializable {
         branches.add(branch);
     }
 
-    public void addSplitHash(String hash) {
-        splitHash = hash;
+    public void addSplitHash(String point, String hash) {
+        splitHash.put(point, hash);
     }
 
-    public String getSplitHash() {
-        return splitHash;
+    public void remSplitHash(String point) {
+        splitHash.remove(point);
+    }
+
+    public String getSplitHash(String point) {
+        return splitHash.get(point);
     }
 
     public void remBranch(String branch) {

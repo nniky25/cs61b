@@ -559,15 +559,16 @@ public class Repository implements Serializable {
         if (branches.contains(branch)) {
             System.out.println("A branch with that name already exists.");
             return;
-        } else if (branches.size() == 2) {
-            System.out.println("Full branches.");
-            return;
         }
+
+        // Get currentBranch.
+        String currentBranch = status.getCurrentBranch();
+        String point = currentBranch + branch;
 
         // Add new branch and splitHash to status and update SPLIT.
         branches.add(branch);
         String headHash = readContentsAsString(HEAD);
-        status.addSplitHash(headHash);
+        status.addSplitHash(point, headHash);
         writeObject(STATUS, status);
         writeContents(SPLIT, headHash);
     }
@@ -805,9 +806,9 @@ public class Repository implements Serializable {
     public static void merge(String thisBranch) throws IOException {
         /* Check before merge. */
         // Get a status object.
-        String currentBranch = null;
         Status status = readObject(STATUS, Status.class);
         Set<String> branches = status.getBranches();
+        String currentBranch = status.getCurrentBranch();
 
         // Get area.
         StagingArea area = readObject(STAGING, StagingArea.class);
@@ -824,26 +825,15 @@ public class Repository implements Serializable {
         } else if (!branches.contains(thisBranch)) {
             System.out.println("A branch with that name does not exist.");
             return;
-        } else if (status.getCurrentBranch().equals(thisBranch)) {
+        } else if (currentbranch.equals(thisBranch)) {
             System.out.println("Cannot merge a branch with itself.");
             return;
         }
 
-        for (String i : branches) {
-            if (!i.equals(status.getCurrentBranch())) {
-                currentBranch = i;
-            }
-        }
-
-        /**if (headMap.size() != fileList.size()) {
-            System.out.println("There is an untracked file "
-                    + "in the way; delete it, or add and commit it first.");
-            return;
-        }*/
-
         /* Merge. */
         // Get splitHash, headHash and given branch Hash.
-        String splitHash = status.getSplitHash();
+        String point = currentBranch + thisBranch;
+        String splitHash = status.getSplitHash(point);
         String headHash = readContentsAsString(HEAD);
         String branchHash = readContentsAsString(SPLIT);
 
@@ -857,7 +847,8 @@ public class Repository implements Serializable {
             return;
         }
 
-        Map<String, MergeHelper> helper = files();
+        // Get all files names and store them to a map.
+        Map<String, MergeHelper> helper = files(point);
 
         boolean conflict = check(helper);
         if (conflict) {
@@ -867,6 +858,123 @@ public class Repository implements Serializable {
     }
 
     public static boolean check(Map<String, MergeHelper> helper) throws IOException {
+        boolean conflict = false;
+
+        for (Map.Entry<String, MergeHelper> entry : helper.entrySet()) {
+            String key = entry.getKey();
+            MergeHelper value = entry.getValue();
+            String split = value.getSplitHash();
+            String head = value.getHeadHash();
+            String given = value.branchHash();
+
+            if (Objects.equals(split, null)) {
+                if (Objects.equals(given, null) && !Objects.equals(head, null)) {
+                    // Stay
+                    continue;
+                } else if (!Objects.equals(given, null) && Objects.equals(head, null)) {
+                    // Rewrite the file with the version of given and add.
+                    rewrite(given, key);
+                } else {
+                    if (Objects.equals(given, head)) {
+                        // stay
+                        continue;
+                    } else {
+                        // Conflict when head and given are different.
+                        conflict = rewriteForConflict(head, given, key);
+                    }
+                }
+            } else {
+                if (Objects.equals(head, null) && !Objects.equals(given, null)) {
+                    if (Objects.equals(given, split)) {
+                        continue;
+                    } else {
+                        conflict = rewriteForConflict(head, given, key);
+                    }
+                } else if (!Objects.equals(head, null) && Objects.equals(given, null)) {
+                    if (Objects.equals(head, split)) {
+                        rm(key);
+                    } else {
+                        conflict = rewriteForConflict(head, given, key);
+                    }
+                } else {
+                    if (Objects.equals(head, split) && !Objects.equals(given, split)) {
+                        rewrite(given, key);
+                    } else if (Objects.equals(given, split) && !Objects.equals(head, split)) {
+                        continue;
+                    } else if (Objects.equals(given, split)) {
+                        continue;
+                    } else {
+                        conflict = rewriteForConflict(head, given, key);
+                    }
+                }
+            }
+        }
+        return conflict;
+    }
+
+    public static void rewrite(String blobHash, String fileName) throws IOException {
+        File file = join(CWD, fileName);
+        if (!file.createNewFile()) {
+            throw new IOException("fail to create" + file.getAbsolutePath());
+        }
+        File blobFile = join(BLOB, blobHash);
+        Blob fileBlob = readObject(blobFile, Blob.class);
+        byte[] fileContent = fileBlob.getContent();
+        writeContents(file, fileContent);
+        add(fileName);
+    }
+
+    public static boolean rewriteForConflict(String blobHash1,
+                                          String blobHash2, String fileName) throws IOException {
+        boolean conflict = false;
+        // Put the filet to CWD.
+        File file = join(CWD, fileName);
+        if (!file.createNewFile()) {
+            throw new IOException("fail to create" + file.getAbsolutePath());
+        }
+
+        // Get files from BLOB, then write content to new files.
+        String fileContent1;
+        if (!Objects.equals(blobHash1, null)) {
+            File blobFile1 = join(BLOB, blobHash2);
+            Blob blob1 = readObject(blobFile1, Blob.class);
+            byte[] content = blob1.getContent();
+            if (content == null) {
+                fileContent1 = null;
+            } else {
+                fileContent1 = Arrays.toString(content);
+            }
+        } else {
+            fileContent1 = null;
+        }
+
+        String fileContent2;
+        if (!Objects.equals(blobHash2, null)) {
+            File blobFile2 = join(BLOB, blobHash2);
+            Blob blob2 = readObject(blobFile2, Blob.class);
+            byte[] content = blob2.getContent();
+            if (content == null) {
+                fileContent2 = null;
+            } else {
+                fileContent2 = Arrays.toString(content);
+            }
+        } else {
+            fileContent2 = null;
+        }
+
+        String a = "<<<<<<< HEAD" + "\n";
+        String b = "=======" + "\n";
+        String c = ">>>>>>>";
+        String finalContents = a + fileContent1 + "\n" + b + fileContent2 + "\n" + c;
+        writeContents(file, finalContents);
+        add(fileName);
+
+        conflict = true;
+        return conflict;
+    }
+
+
+    /**public static boolean check(Map<String, MergeHelper> helper) throws IOException {
 
         boolean conflict = false;
 
@@ -964,9 +1072,9 @@ public class Repository implements Serializable {
             }
         }
         return conflict;
-    }
+    }*/
 
-        public static Map<String, MergeHelper> files () {
+        public static Map<String, MergeHelper> files(String point) {
             // Get splitMap.
             String splitHash = readContentsAsString(SPLIT);
             Commit splitCommit = getCommit(splitHash);
@@ -978,7 +1086,7 @@ public class Repository implements Serializable {
 
             // Get another branch headMap
             Status status = readObject(STATUS, Status.class);
-            String branchHeadHash = status.getSplitHash();
+            String branchHeadHash = status.getSplitHash(point);
             Commit branchHeadCommit = getCommit(branchHeadHash);
             Map<String, String> branchMap = branchHeadCommit.getMap();
 
@@ -999,7 +1107,6 @@ public class Repository implements Serializable {
                 MergeHelper node = new MergeHelper(split, head, branch);
                 helper.put(fileName, node);
             }
-
             return helper;
         }
 
