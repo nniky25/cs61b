@@ -6,7 +6,7 @@ import java.util.*;
 /** Show status of gitlit. */
 public class Status implements Serializable {
     private String currentBranch;
-    private Map<String, String> splitHash;
+    private Map<String, String> splitHash = new HashMap<>();
     private Set<String> branches = new TreeSet<>();
     private Set<String> stagedFiles = new TreeSet<>();
     private Set<String> removedFiles = new TreeSet<>();
