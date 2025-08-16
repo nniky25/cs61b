@@ -291,7 +291,6 @@ public class Repository implements Serializable {
 
         // Remove from table
         if (!stagedRem.isEmpty()) {
-            System.out.println("THe stagedRem is not empty.");
             for (Map.Entry<String, String> entry : stagedRem.entrySet()) { // 遍历
                 String key = entry.getKey();
                 //String value = entry.getValue();
@@ -905,7 +904,6 @@ public class Repository implements Serializable {
                         conflict = rewriteForConflict(head, given, key);
                     }
                 } else if (!Objects.equals(head, null) && Objects.equals(given, null)) {
-                    System.out.println("2.2");
                     if (Objects.equals(head, split)) {
                         rmFile(key);
                     } else {
@@ -919,8 +917,7 @@ public class Repository implements Serializable {
                     } else if (Objects.equals(given, split)) {
                         continue;
                     } else {
-                        System.out.println("2.3.4");
-                        conflict = rewriteForConflict(head, given, key);
+=                        conflict = rewriteForConflict(head, given, key);
                     }
                 }
             }
