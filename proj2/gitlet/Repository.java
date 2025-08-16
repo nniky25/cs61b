@@ -293,8 +293,8 @@ public class Repository implements Serializable {
         if (!stagedRem.isEmpty()) {
             for (Map.Entry<String, String> entry : stagedRem.entrySet()) { // 遍历
                 String key = entry.getKey();
-                //String value = entry.getValue();
-                currentCommitMap.remove(key);
+                String value = entry.getValue();
+                currentCommitMap.remove(key, value);
 
             }
             changedTable = true;
@@ -905,7 +905,7 @@ public class Repository implements Serializable {
                     }
                 } else if (!Objects.equals(head, null) && Objects.equals(given, null)) {
                     if (Objects.equals(head, split)) {
-                        rmFile(key);
+                        rm(key);
                     } else {
                         conflict = rewriteForConflict(head, given, key);
                     }
