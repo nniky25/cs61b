@@ -985,10 +985,11 @@ public class Repository implements Serializable {
         String a = "<<<<<<< HEAD" + "\n";
         String b = "=======" + "\n";
         String c = ">>>>>>>" + "\n";
-        String finalContents = a + fileContent1 + "\n" + b + fileContent2 + "\n" + c;
+        String finalContents = a + fileContent1 + b + fileContent2 + c;
         writeContents(file, finalContents);
 
         conflict = true;
+        add(fileName);
         return conflict;
     }
 
