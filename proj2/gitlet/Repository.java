@@ -3,6 +3,7 @@ package gitlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -873,7 +874,7 @@ public class Repository implements Serializable {
         if (conflict) {
             System.out.println("Encountered a merge conflict.");
         }
-        commit("Merged " + thisBranch + " into" + currentBranch + ".", branchHash);
+        commit("Merged " + thisBranch + " into " + currentBranch + ".", branchHash);
     }
 
     public static boolean check(Map<String, MergeHelper> helper) throws IOException {
@@ -961,7 +962,7 @@ public class Repository implements Serializable {
             if (Objects.equals(content, null)) {
                 fileContent1 = "";
             } else {
-                fileContent1 = Arrays.toString(content);
+                fileContent1 =  new String(content, StandardCharsets.UTF_8);
             }
         } else {
             fileContent1 = "";
@@ -975,7 +976,7 @@ public class Repository implements Serializable {
             if (Objects.equals(content, null)) {
                 fileContent2 = "";
             } else {
-                fileContent2 = Arrays.toString(content);
+                fileContent2 =  new String(content, StandardCharsets.UTF_8);
             }
         } else {
             fileContent2 = "";
@@ -983,10 +984,9 @@ public class Repository implements Serializable {
 
         String a = "<<<<<<< HEAD" + "\n";
         String b = "=======" + "\n";
-        String c = ">>>>>>>";
+        String c = ">>>>>>>" + "\n";
         String finalContents = a + fileContent1 + "\n" + b + fileContent2 + "\n" + c;
         writeContents(file, finalContents);
-        add(fileName);
 
         conflict = true;
         return conflict;
