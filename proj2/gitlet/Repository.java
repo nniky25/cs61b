@@ -385,7 +385,7 @@ public class Repository implements Serializable {
         boolean hasKey = headCommit.getMap().containsKey(rmFileName);
 
         if (hasKey) {
-            // Read file hash form commit.
+            // Read file hash from commit.
             Map<String, String> headMap = headCommit.getMap();
             String fileHash = headMap.get(rmFileName);
 
@@ -563,12 +563,16 @@ public class Repository implements Serializable {
 
         // Get currentBranch.
         String currentBranch = status.getCurrentBranch();
-        String point = currentBranch + branch;
+        String point1 = currentBranch + branch;
+        String point2 = branch + currentBranch;
 
+        System.out.println(point1);
         // Add new branch and splitHash to status and update SPLIT.
         branches.add(branch);
         String headHash = readContentsAsString(HEAD);
-        status.addSplitHash(point, headHash);
+        System.out.println(headHash);
+        status.addSplitHash(point1, headHash);
+        status.addSplitHash(point2, headHash);
         writeObject(STATUS, status);
         writeContents(SPLIT, headHash);
     }
@@ -813,11 +817,6 @@ public class Repository implements Serializable {
         // Get area.
         StagingArea area = readObject(STAGING, StagingArea.class);
 
-        // Get fileList and head commit.
-        Commit headCommit = getHeadCommit();
-        List<String> fileList = plainFilenamesIn(CWD);
-        Map<String, String> headMap = headCommit.getMap();
-
         // Check station.
         if (!area.isEmpty()) {
             System.out.println("You have uncommitted changes.");
@@ -837,6 +836,9 @@ public class Repository implements Serializable {
         String headHash = readContentsAsString(HEAD);
         String branchHash = readContentsAsString(SPLIT);
 
+        //System.out.println(splitHash);
+        //System.out.println(headHash);
+        //System.out.println(branchHash);
         // Check station.
         if (splitHash.equals(branchHash)) {
             System.out.println("Given branch is an ancestor of the current branch.");
@@ -867,6 +869,10 @@ public class Repository implements Serializable {
             String head = value.getHeadHash();
             String given = value.branchHash();
 
+            //System.out.println(split);
+            //System.out.println(head);
+            //System.out.println(given);
+            //System.out.println("====");
             if (Objects.equals(split, null)) {
                 if (Objects.equals(given, null) && !Objects.equals(head, null)) {
                     // Stay
@@ -893,6 +899,7 @@ public class Repository implements Serializable {
                 } else if (!Objects.equals(head, null) && Objects.equals(given, null)) {
                     if (Objects.equals(head, split)) {
                         rm(key);
+                        //System.out.println("remove file.");
                     } else {
                         conflict = rewriteForConflict(head, given, key);
                     }
@@ -939,13 +946,13 @@ public class Repository implements Serializable {
             File blobFile1 = join(BLOB, blobHash2);
             Blob blob1 = readObject(blobFile1, Blob.class);
             byte[] content = blob1.getContent();
-            if (content == null) {
-                fileContent1 = null;
+            if (Objects.equals(content, null)) {
+                fileContent1 = "";
             } else {
                 fileContent1 = Arrays.toString(content);
             }
         } else {
-            fileContent1 = null;
+            fileContent1 = "";
         }
 
         String fileContent2;
@@ -953,13 +960,13 @@ public class Repository implements Serializable {
             File blobFile2 = join(BLOB, blobHash2);
             Blob blob2 = readObject(blobFile2, Blob.class);
             byte[] content = blob2.getContent();
-            if (content == null) {
-                fileContent2 = null;
+            if (Objects.equals(content, null)) {
+                fileContent2 = "";
             } else {
                 fileContent2 = Arrays.toString(content);
             }
         } else {
-            fileContent2 = null;
+            fileContent2 = "";
         }
 
         String a = "<<<<<<< HEAD" + "\n";
@@ -974,20 +981,20 @@ public class Repository implements Serializable {
     }
 
     public static Map<String, MergeHelper> files(String point) {
-        // Get splitMap.
-        String splitHash = readContentsAsString(SPLIT);
-        Commit splitCommit = getCommit(splitHash);
-        Map<String, String> splitMap = splitCommit.getMap();
+        // Get branchMap.
+        String branchHash = readContentsAsString(SPLIT);
+        Commit branchCommit = getCommit(branchHash);
+        Map<String, String> branchMap = branchCommit.getMap();
 
         // Get headMap
         Commit headCommit = getHeadCommit();
         Map<String, String> headMap = headCommit.getMap();
 
-        // Get another branch headMap
+        // Get splitMap
         Status status = readObject(STATUS, Status.class);
-        String branchHeadHash = status.getSplitHash(point);
-        Commit branchHeadCommit = getCommit(branchHeadHash);
-        Map<String, String> branchMap = branchHeadCommit.getMap();
+        String splitHash = status.getSplitHash(point);
+        Commit splitCommit = getCommit(splitHash);
+        Map<String, String> splitMap = splitCommit.getMap();
 
         // Create a set to store files.
         Set<String> files = new HashSet<>();
@@ -1002,10 +1009,11 @@ public class Repository implements Serializable {
         for (String fileName : files) {
             String split = splitMap.get(fileName);
             String head = headMap.get(fileName);
-            String branch = headMap.get(fileName);
+            String branch = branchMap.get(fileName);
             MergeHelper node = new MergeHelper(split, head, branch);
             helper.put(fileName, node);
         }
+        //System.out.println(files);
         return helper;
     }
 
