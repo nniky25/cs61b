@@ -919,6 +919,7 @@ public class Repository implements Serializable {
                 } else if (!Objects.equals(head, null) && Objects.equals(given, null)) {
                     if (Objects.equals(head, split)) {
                         rmFile(key);
+                        restrictedDelete(key);
                         //System.out.println("remove file.");
                     } else {
                         conflict = rewriteForConflict(head, given, key);
