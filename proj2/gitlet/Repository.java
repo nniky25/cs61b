@@ -917,7 +917,7 @@ public class Repository implements Serializable {
                     } else if (Objects.equals(given, split)) {
                         continue;
                     } else {
-=                        conflict = rewriteForConflict(head, given, key);
+                        conflict = rewriteForConflict(head, given, key);
                     }
                 }
             }
