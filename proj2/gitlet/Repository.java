@@ -817,6 +817,12 @@ public class Repository implements Serializable {
         area.clearStagingArea();
         // Write area.
         writeObject(STAGING, area);
+        // Get status
+        Status status = readObject(STATUS, Status.class);
+        // Clean stage in status.
+        status.cleanStage();
+        // Write status to STATUS.
+        writeObject(STATUS, status);
         // Write head.
         writeContents(HEAD, commitHash);
     }
