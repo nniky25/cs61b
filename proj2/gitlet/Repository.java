@@ -154,7 +154,6 @@ public class Repository implements Serializable {
         if (hasKey) {
             // The file was added to headCommit before.
             /*   If content is different, add, else don't. */
-
             if (!headCommit.compare(file, hash)) {
                 // -> Update Area
                 area.updateAdd(file, hash);
@@ -177,7 +176,6 @@ public class Repository implements Serializable {
             // -> Add status
             status.addStagedFile(file);
             writeObject(STATUS, status);
-
         }
         //System.out.println("nothing add");
     }
@@ -293,6 +291,7 @@ public class Repository implements Serializable {
 
         // Remove from table
         if (!stagedRem.isEmpty()) {
+            System.out.println("THe stagedRem is not empty.");
             for (Map.Entry<String, String> entry : stagedRem.entrySet()) { // 遍历
                 String key = entry.getKey();
                 //String value = entry.getValue();
@@ -304,7 +303,6 @@ public class Repository implements Serializable {
 
         if (changedTable) {
             // Save new commit to COMMIT directory.
-            System.out.println("update commit");
             updateCommit(currentCommit);
             // Clean stage in status.
             status.cleanStage();
@@ -322,12 +320,11 @@ public class Repository implements Serializable {
     /** Add new Blob to BLOB directory. */
     public static void updateBlob(String fileHash, byte[] fileContent) throws IOException {
         File newBlob = join(BLOB, fileHash);
-        if (newBlob.exists()) {
-            System.exit(0);
+
+        if (!newBlob.exists()) {
+            newBlob.createNewFile();
         }
-        if (!newBlob.createNewFile()) {
-            throw new IOException("fail to create" + newBlob.getAbsolutePath());
-        }
+
         Blob currentBlob = new Blob(fileContent);
         writeObject(newBlob, /*(Serializable)*/ currentBlob);
     }
@@ -586,11 +583,9 @@ public class Repository implements Serializable {
         String point1 = currentBranch + branch;
         String point2 = branch + currentBranch;
 
-        //System.out.println(point1);
         // Add new branch and splitHash to status and update SPLIT.
         branches.add(branch);
         String headHash = readContentsAsString(HEAD);
-        //System.out.println(headHash);
         status.addSplitHash(point1, headHash);
         status.addSplitHash(point2, headHash);
         writeObject(STATUS, status);
@@ -856,9 +851,6 @@ public class Repository implements Serializable {
         String headHash = readContentsAsString(HEAD);
         String branchHash = readContentsAsString(SPLIT);
 
-        //System.out.println(splitHash);
-        //System.out.println(headHash);
-        //System.out.println(branchHash);
         // Check station.
         if (splitHash.equals(branchHash)) {
             System.out.println("Given branch is an ancestor of the current branch.");
@@ -889,10 +881,6 @@ public class Repository implements Serializable {
             String head = value.getHeadHash();
             String given = value.branchHash();
 
-            //System.out.println(split);
-            //System.out.println(head);
-            //System.out.println(given);
-            //System.out.println("====");
             if (Objects.equals(split, null)) {
                 if (Objects.equals(given, null) && !Objects.equals(head, null)) {
                     // Stay
@@ -917,10 +905,9 @@ public class Repository implements Serializable {
                         conflict = rewriteForConflict(head, given, key);
                     }
                 } else if (!Objects.equals(head, null) && Objects.equals(given, null)) {
+                    System.out.println("2.2");
                     if (Objects.equals(head, split)) {
                         rmFile(key);
-                        restrictedDelete(key);
-                        //System.out.println("remove file.");
                     } else {
                         conflict = rewriteForConflict(head, given, key);
                     }
@@ -932,6 +919,7 @@ public class Repository implements Serializable {
                     } else if (Objects.equals(given, split)) {
                         continue;
                     } else {
+                        System.out.println("2.3.4");
                         conflict = rewriteForConflict(head, given, key);
                     }
                 }
@@ -942,8 +930,8 @@ public class Repository implements Serializable {
 
     public static void rewrite(String blobHash, String fileName) throws IOException {
         File file = join(CWD, fileName);
-        if (!file.createNewFile()) {
-            throw new IOException("fail to create" + file.getAbsolutePath());
+        if (!file.exists()) {
+            file.createNewFile();
         }
         File blobFile = join(BLOB, blobHash);
         Blob fileBlob = readObject(blobFile, Blob.class);
@@ -957,8 +945,8 @@ public class Repository implements Serializable {
         boolean conflict = false;
         // Put the filet to CWD.
         File file = join(CWD, fileName);
-        if (!file.createNewFile()) {
-            throw new IOException("fail to create" + file.getAbsolutePath());
+        if (!file.exists()) {
+            file.createNewFile();
         }
 
         // Get files from BLOB, then write content to new files.
@@ -1034,7 +1022,6 @@ public class Repository implements Serializable {
             MergeHelper node = new MergeHelper(split, head, branch);
             helper.put(fileName, node);
         }
-        //System.out.println(files);
         return helper;
     }
 
