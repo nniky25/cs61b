@@ -518,7 +518,7 @@ public class Repository implements Serializable {
             message("commit " + fileName);
             message("Merge: " + first + " " + second);
             message("Date: %s", formattedTime);
-            message("Merged development into master.");
+            message(message);
             System.out.println();
         }
 
