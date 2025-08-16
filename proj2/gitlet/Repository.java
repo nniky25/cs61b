@@ -295,8 +295,8 @@ public class Repository implements Serializable {
         if (!stagedRem.isEmpty()) {
             for (Map.Entry<String, String> entry : stagedRem.entrySet()) { // 遍历
                 String key = entry.getKey();
-                String value = entry.getValue();
-                currentCommitMap.remove(key, value);
+                //String value = entry.getValue();
+                currentCommitMap.remove(key);
 
             }
             changedTable = true;
@@ -304,6 +304,7 @@ public class Repository implements Serializable {
 
         if (changedTable) {
             // Save new commit to COMMIT directory.
+            System.out.println("update commit");
             updateCommit(currentCommit);
             // Clean stage in status.
             status.cleanStage();
@@ -410,6 +411,25 @@ public class Repository implements Serializable {
         if (!removed) {
             System.out.println("No reason to remove the file.");
         }
+    }
+
+    public static void rmFile(String rmFileName) {
+
+        File fileName = join(CWD, rmFileName);
+
+        Status status = readObject(STATUS, Status.class);
+
+        /* Check Whether it is in add and remove staged area. */
+        // Get area
+        StagingArea area = readObject(STAGING, StagingArea.class);
+        Map<String, String> stagedRem = area.getStagedRem();
+
+        stagedRem.put(rmFileName, null);
+        status.removeFile(rmFileName);
+        restrictedDelete(fileName);
+
+        writeObject(STAGING, area);
+        writeObject(STATUS, status);
     }
 
     /** Get the head commit object. */
@@ -898,7 +918,7 @@ public class Repository implements Serializable {
                     }
                 } else if (!Objects.equals(head, null) && Objects.equals(given, null)) {
                     if (Objects.equals(head, split)) {
-                        rm(key);
+                        rmFile(key);
                         //System.out.println("remove file.");
                     } else {
                         conflict = rewriteForConflict(head, given, key);
@@ -943,7 +963,7 @@ public class Repository implements Serializable {
         // Get files from BLOB, then write content to new files.
         String fileContent1;
         if (!Objects.equals(blobHash1, null)) {
-            File blobFile1 = join(BLOB, blobHash2);
+            File blobFile1 = join(BLOB, blobHash1);
             Blob blob1 = readObject(blobFile1, Blob.class);
             byte[] content = blob1.getContent();
             if (Objects.equals(content, null)) {
