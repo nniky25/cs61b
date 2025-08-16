@@ -566,11 +566,11 @@ public class Repository implements Serializable {
         String point1 = currentBranch + branch;
         String point2 = branch + currentBranch;
 
-        System.out.println(point1);
+        //System.out.println(point1);
         // Add new branch and splitHash to status and update SPLIT.
         branches.add(branch);
         String headHash = readContentsAsString(HEAD);
-        System.out.println(headHash);
+        //System.out.println(headHash);
         status.addSplitHash(point1, headHash);
         status.addSplitHash(point2, headHash);
         writeObject(STATUS, status);
