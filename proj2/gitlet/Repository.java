@@ -50,7 +50,7 @@ public class Repository implements Serializable {
 
 
     /** Full construct (basic) .gitlet/ -- top level for all persistent data.
-     *              (basic) - split -- file containing the branch split commit hash.
+     *              (basic) - split -- file containing a map object of branches headCommit hash.
      *              (basic) - commit/ -- director containing the Commit hash files.
      *              (basic) - blob/ -- director containing the Blobs of fileHash.
      *              (basic) - head -- file containing the head commit hash.
@@ -100,6 +100,10 @@ public class Repository implements Serializable {
         // Set Area Object to STAGING file.
         StagingArea area = new StagingArea();
         writeObject(STAGING, area);
+
+        // Set new branches map to SPLIT.
+        Map<String, String> branchesMap = new HashMap<>();
+        writeObject(SPLIT, (Serializable) branchesMap);
 
         // Set Status Object to STATUS file.
         Status status = new Status(initBranch);
@@ -551,7 +555,7 @@ public class Repository implements Serializable {
     }
 
     public static void addBranch(String branch) {
-        Map<String, String> splitMap = new HashMap<>();
+        Map<String, String> splitMap = readObject(SPLIT, HashMap.class);
         Status status = readObject(STATUS, Status.class);
         Set<String> branches = status.getBranches();
 
@@ -639,8 +643,11 @@ public class Repository implements Serializable {
             System.out.println("No need to checkout the current branch.");
             return;
         }
-        // Get splitMap
+        // Get splitMap and put currentBranch to it.
         Map<String, String> splitMap = readObject(SPLIT, HashMap.class);
+        String headHash = readContentsAsString(HEAD);
+        splitMap.put(status.getCurrentBranch(), headHash);
+
         String branchHash = splitMap.get(thisBranch);
         Commit branchCommit = getCommit(branchHash);
         if (branchCommit == null) {
@@ -671,8 +678,6 @@ public class Repository implements Serializable {
         status.changeCurrentBranch(thisBranch);
 
         // Change headHash to SPLIT.
-        String headHash = readContentsAsString(HEAD);
-        splitMap.put(status.getCurrentBranch(), headHash);
         writeObject(SPLIT, (Serializable) splitMap);
 
         // Change this commitHash to head commit.
@@ -1014,7 +1019,7 @@ public class Repository implements Serializable {
         String branchHash = branchesMap.get(thisBranch);
         Commit branchCommit = getCommit(branchHash);
         Map<String, String> branchMap = branchCommit.getMap();
-        
+
 
         // Get headMap
         Commit headCommit = getHeadCommit();
