@@ -874,6 +874,10 @@ public class Repository implements Serializable {
         String branchHash = splitMap.get(thisBranch);
 
         // Check station.
+        if (Objects.equals(splitHash, null)) {
+            splitHash = findSplitPoint(headHash, branchHash);
+        }
+
         if (splitHash.equals(branchHash)) {
             System.out.println("Given branch is an ancestor of the current branch.");
             return;
@@ -900,6 +904,42 @@ public class Repository implements Serializable {
             System.out.println("Encountered a merge conflict.");
         }
         commit("Merged " + thisBranch + " into " + currentBranch + ".", branchHash);
+    }
+
+    public static List<String> getParents(String head) {
+        List<String> parents = new ArrayList<>();;
+        Commit commit = getCommit(head);
+        String parentHash1 = commit.getParentHash1();
+        while (parentHash1 != null) {
+            parents.add(parentHash1);
+            commit = getCommit(parentHash1);
+            parentHash1 = commit.getParentHash1();
+        }
+        return parents;
+    }
+
+    public static String findSplitPoint(String head1, String head2) {
+        // find all parent 1 ancestors of head1
+        Set<String> ancestors1 = new HashSet<>();
+        Queue<String> q1 = new LinkedList<>();
+        q1.add(head1);
+        while (!q1.isEmpty()) {
+            String c = q1.poll();
+            ancestors1.add(c);
+            q1.addAll(getParents(c));
+        }
+
+        // BFS
+        Queue<String> q2 = new LinkedList<>();
+        q2.add(head2);
+        while (!q2.isEmpty()) {
+            String c = q2.poll();
+            if (ancestors1.contains(c)) {
+                return c; // find split point
+            }
+            q2.addAll(getParents(c));
+        }
+        return null;
     }
 
     public static int check(Map<String, MergeHelper> helper) throws IOException {
