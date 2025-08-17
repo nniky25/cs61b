@@ -594,7 +594,12 @@ public class Repository implements Serializable {
                     if (commitHash.equals(allCommit.substring(0, 8))) {
                         commit = getCommit(allCommit);
                     }
-
+                }
+                if (Objects.equals(commit, null)) {
+                    if (commit == null) {
+                        System.out.println("No commit with that id exists.");
+                        return;
+                    }
                 }
             }
         } else {
@@ -602,7 +607,6 @@ public class Repository implements Serializable {
         }
 
         if (commit == null) {
-            System.out.println("No commit with that id exists.");
             return;
         }
         checkout(commit, fileName);
