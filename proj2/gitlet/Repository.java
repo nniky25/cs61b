@@ -872,12 +872,12 @@ public class Repository implements Serializable {
         String headHash = readContentsAsString(HEAD);
         Map<String, String> splitMap = readObject(SPLIT, HashMap.class);
         String branchHash = splitMap.get(thisBranch);
-
-        // Check station.
+        // Use BFS
         if (Objects.equals(splitHash, null)) {
             splitHash = findSplitPoint(headHash, branchHash);
         }
 
+        // Check station.
         if (splitHash.equals(branchHash)) {
             System.out.println("Given branch is an ancestor of the current branch.");
             return;
@@ -888,7 +888,7 @@ public class Repository implements Serializable {
         }
 
         // Get all files names and store them to a map.
-        Map<String, MergeHelper> helper = files(point, thisBranch);
+        Map<String, MergeHelper> helper = files(splitHash, thisBranch);
 
         /**
          * conflict is an ini that present different stage of merge.
@@ -907,7 +907,7 @@ public class Repository implements Serializable {
     }
 
     public static List<String> getParents(String head) {
-        List<String> parents = new ArrayList<>();;
+        List<String> parents = new ArrayList<>();
         Commit commit = getCommit(head);
         String parentHash1 = commit.getParentHash1();
         while (parentHash1 != null) {
@@ -1072,7 +1072,7 @@ public class Repository implements Serializable {
         return conflict;
     }
 
-    public static Map<String, MergeHelper> files(String point, String thisBranch) {
+    public static Map<String, MergeHelper> files(String splitHash, String thisBranch) {
         // Get branchMap.
         Map<String, String> branchesMap = readObject(SPLIT, HashMap.class);
         String branchHash = branchesMap.get(thisBranch);
@@ -1085,8 +1085,6 @@ public class Repository implements Serializable {
         Map<String, String> headMap = headCommit.getMap();
 
         // Get splitMap
-        Status status = readObject(STATUS, Status.class);
-        String splitHash = status.getSplitHash(point);
         Commit splitCommit = getCommit(splitHash);
         Map<String, String> splitMap = splitCommit.getMap();
 
