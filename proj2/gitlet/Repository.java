@@ -879,6 +879,8 @@ public class Repository implements Serializable {
 
     public static boolean check(Map<String, MergeHelper> helper) throws IOException {
         boolean conflict = false;
+        // Get WD files.
+        List<String> fileList = plainFilenamesIn(CWD);
 
         for (Map.Entry<String, MergeHelper> entry : helper.entrySet()) {
             String key = entry.getKey();
@@ -893,6 +895,11 @@ public class Repository implements Serializable {
                     continue;
                 } else if (!Objects.equals(given, null) && Objects.equals(head, null)) {
                     // Rewrite the file with the version of given and add.
+                    if (fileList.contains(key)) {
+                        System.out.println("There is an untracked file "
+                                + "in the way; delete it, or add and commit it first.");
+                        System.exit(1);
+                    }
                     rewrite(given, key);
                 } else {
                     if (Objects.equals(given, head)) {
@@ -908,6 +915,11 @@ public class Repository implements Serializable {
                     if (Objects.equals(given, split)) {
                         continue;
                     } else {
+                        if (fileList.contains(key)) {
+                            System.out.println("There is an untracked file "
+                                    + "in the way; delete it, or add and commit it first.");
+                            System.exit(1);
+                        }
                         conflict = rewriteForConflict(head, given, key);
                     }
                 } else if (!Objects.equals(head, null) && Objects.equals(given, null)) {
