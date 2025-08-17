@@ -410,25 +410,6 @@ public class Repository implements Serializable {
         }
     }
 
-    public static void rmFile(String rmFileName) {
-
-        File fileName = join(CWD, rmFileName);
-
-        Status status = readObject(STATUS, Status.class);
-
-        /* Check Whether it is in add and remove staged area. */
-        // Get area
-        StagingArea area = readObject(STAGING, StagingArea.class);
-        Map<String, String> stagedRem = area.getStagedRem();
-
-        stagedRem.put(rmFileName, null);
-        status.removeFile(rmFileName);
-        restrictedDelete(fileName);
-
-        writeObject(STAGING, area);
-        writeObject(STATUS, status);
-    }
-
     /** Get the head commit object. */
     public static Commit getHeadCommit() {
         // Read head hash form HEAD
@@ -570,6 +551,7 @@ public class Repository implements Serializable {
     }
 
     public static void addBranch(String branch) {
+        Map<String, String> splitMap = new HashMap<>();
         Status status = readObject(STATUS, Status.class);
         Set<String> branches = status.getBranches();
 
@@ -589,7 +571,8 @@ public class Repository implements Serializable {
         status.addSplitHash(point1, headHash);
         status.addSplitHash(point2, headHash);
         writeObject(STATUS, status);
-        writeContents(SPLIT, headHash);
+        splitMap.put(branch, headHash);
+        writeObject(SPLIT, (Serializable) splitMap);
     }
 
     public static void checkout1(String fileName) throws IOException {
@@ -657,15 +640,16 @@ public class Repository implements Serializable {
             return;
         }
         // Get splitMap
-        String splitHash = readContentsAsString(SPLIT);
-        Commit splitCommit = getCommit(splitHash);
-        if (splitCommit == null) {
+        Map<String, String> splitMap = readObject(SPLIT, HashMap.class);
+        String branchHash = splitMap.get(thisBranch);
+        Commit branchCommit = getCommit(branchHash);
+        if (branchCommit == null) {
             return;
         }
-        Map<String, String> splitMap = splitCommit.getMap();
+        Map<String, String> branchMap = branchCommit.getMap();
 
         for (int i = 0; i < fileList.size(); i++) {
-            if (!headMap.containsKey(fileList.get(i)) && splitMap.containsKey(fileList.get(i))) {
+            if (!headMap.containsKey(fileList.get(i)) && branchMap.containsKey(fileList.get(i))) {
                 System.out.println("There is an untracked file "
                         + "in the way; delete it, or add and commit it first.");
                 return;
@@ -677,7 +661,7 @@ public class Repository implements Serializable {
         for (Map.Entry<String, String> entry : headMap.entrySet()) {
             String key = entry.getKey();
             // Do 1
-            if (!splitMap.containsKey(key)) {
+            if (!branchMap.containsKey(key)) {
                 delectFile.add(key);
             }
         }
@@ -685,14 +669,17 @@ public class Repository implements Serializable {
 
         // Change this thisBranch to current thisBranch.
         status.changeCurrentBranch(thisBranch);
+
         // Change headHash to SPLIT.
         String headHash = readContentsAsString(HEAD);
-        writeContents(SPLIT, headHash);
+        splitMap.put(status.getCurrentBranch(), headHash);
+        writeObject(SPLIT, (Serializable) splitMap);
+
         // Change this commitHash to head commit.
-        writeContents(HEAD, splitHash);
+        writeContents(HEAD, branchHash);
 
         // Clean CWD and make files.
-        cleanCWDandMakeFiles(splitMap, delectFile);
+        cleanCWDandMakeFiles(branchMap, delectFile);
 
         // Write status.
         writeObject(STATUS, status);
@@ -751,6 +738,10 @@ public class Repository implements Serializable {
         }
         // Change current thisBranch
         status.remBranch(thisBranch);
+        // remove branch form SPLIT.
+        Map<String, String> splitMap = readObject(SPLIT, HashMap.class);
+        splitMap.remove(thisBranch);
+        writeObject(SPLIT, (Serializable) splitMap);
         // Write status
         writeObject(STATUS, status);
     }
@@ -855,7 +846,8 @@ public class Repository implements Serializable {
         String point = currentBranch + thisBranch;
         String splitHash = status.getSplitHash(point);
         String headHash = readContentsAsString(HEAD);
-        String branchHash = readContentsAsString(SPLIT);
+        Map<String, String> splitMap = readObject(SPLIT, HashMap.class);
+        String branchHash = splitMap.get(thisBranch);
 
         // Check station.
         if (splitHash.equals(branchHash)) {
@@ -868,7 +860,7 @@ public class Repository implements Serializable {
         }
 
         // Get all files names and store them to a map.
-        Map<String, MergeHelper> helper = files(point);
+        Map<String, MergeHelper> helper = files(point, thisBranch);
 
         /**
          * conflict is an ini that present different stage of merge.
@@ -1016,11 +1008,13 @@ public class Repository implements Serializable {
         return conflict;
     }
 
-    public static Map<String, MergeHelper> files(String point) {
+    public static Map<String, MergeHelper> files(String point, String thisBranch) {
         // Get branchMap.
-        String branchHash = readContentsAsString(SPLIT);
+        Map<String, String> branchesMap = readObject(SPLIT, HashMap.class);
+        String branchHash = branchesMap.get(thisBranch);
         Commit branchCommit = getCommit(branchHash);
         Map<String, String> branchMap = branchCommit.getMap();
+        
 
         // Get headMap
         Commit headCommit = getHeadCommit();
