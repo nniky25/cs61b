@@ -870,15 +870,24 @@ public class Repository implements Serializable {
         // Get all files names and store them to a map.
         Map<String, MergeHelper> helper = files(point);
 
-        boolean conflict = check(helper);
-        if (conflict) {
+        /**
+         * conflict is an ini that present different stage of merge.
+         *  conflict == 0 ---> there is no conflict.
+         *  conflict == 1 ---> there is conflict.
+         *  conflict == 2 ---> there is an untracked file in the way.
+         */
+        int conflict = check(helper);
+        if (conflict == 2) {
+            return;
+        }
+        if (conflict == 1) {
             System.out.println("Encountered a merge conflict.");
         }
         commit("Merged " + thisBranch + " into " + currentBranch + ".", branchHash);
     }
 
-    public static boolean check(Map<String, MergeHelper> helper) throws IOException {
-        boolean conflict = false;
+    public static int check(Map<String, MergeHelper> helper) throws IOException {
+        int conflict = 0;
         // Get WD files.
         List<String> fileList = plainFilenamesIn(CWD);
 
@@ -898,7 +907,8 @@ public class Repository implements Serializable {
                     if (fileList.contains(key)) {
                         System.out.println("There is an untracked file "
                                 + "in the way; delete it, or add and commit it first.");
-                        System.exit(1);
+                        conflict = 2;
+                        return conflict;
                     }
                     rewrite(given, key);
                 } else {
@@ -918,7 +928,8 @@ public class Repository implements Serializable {
                         if (fileList.contains(key)) {
                             System.out.println("There is an untracked file "
                                     + "in the way; delete it, or add and commit it first.");
-                            System.exit(1);
+                            conflict = 2;
+                            return conflict;
                         }
                         conflict = rewriteForConflict(head, given, key);
                     }
@@ -956,9 +967,9 @@ public class Repository implements Serializable {
         add(fileName);
     }
 
-    public static boolean rewriteForConflict(String blobHash1,
+    public static int rewriteForConflict(String blobHash1,
                                           String blobHash2, String fileName) throws IOException {
-        boolean conflict = false;
+        int conflict = 0;
         // Put the filet to CWD.
         File file = join(CWD, fileName);
         if (!file.exists()) {
@@ -1000,7 +1011,7 @@ public class Repository implements Serializable {
         String finalContents = a + fileContent1 + b + fileContent2 + c;
         writeContents(file, finalContents);
 
-        conflict = true;
+        conflict = 1;
         add(fileName);
         return conflict;
     }
