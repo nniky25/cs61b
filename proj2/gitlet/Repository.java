@@ -586,8 +586,23 @@ public class Repository implements Serializable {
     }
 
     public static void checkout2(String fileName, String commitHash) throws IOException {
-        Commit commit = getCommit(commitHash);
+        Commit commit = null;
+        if (commitHash.length() == 8) {
+            List<String> allCommits = plainFilenamesIn(COMMIT);
+            if (!allCommits.isEmpty()) {
+                for (String allCommit : allCommits) {
+                    if (commitHash.equals(allCommit.substring(0, 8))) {
+                        commit = getCommit(allCommit);
+                    }
+
+                }
+            }
+        } else {
+            commit = getCommit(commitHash);
+        }
+
         if (commit == null) {
+            System.out.println("No commit with that id exists.");
             return;
         }
         checkout(commit, fileName);
