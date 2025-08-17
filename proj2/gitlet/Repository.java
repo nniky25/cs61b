@@ -909,12 +909,14 @@ public class Repository implements Serializable {
     public static List<String> getParents(String head) {
         List<String> parents = new ArrayList<>();
         Commit commit = getCommit(head);
-        String parentHash1 = commit.getParentHash1();
-        while (parentHash1 != null) {
-            parents.add(parentHash1);
-            commit = getCommit(parentHash1);
-            parentHash1 = commit.getParentHash1();
+
+        if (commit.getParentHash1() != null) {
+            parents.add(commit.getParentHash1());
         }
+        if (commit.getParentHash2() != null) {
+            parents.add(commit.getParentHash2());
+        }
+
         return parents;
     }
 
