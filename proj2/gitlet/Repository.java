@@ -25,9 +25,6 @@ public class Repository implements Serializable {
      * variable is used. We've provided two examples for you.
      */
     private static String initBranch = "master";
-    private static String otherBranch;
-    private static String currentbranch;
-    //private static StagingArea Area = new StagingArea();
 
     /** The current working directory. */
     public static final File CWD = new File(System.getProperty("user.dir"));
@@ -111,9 +108,18 @@ public class Repository implements Serializable {
         writeObject(STATUS, status);
     }
 
-    /** Do add. */
+    /** Main method:
+     * Adds a file to the staging area in preparation for the next commit.
+     *
+     * <p>The method checks whether the file exists in the working
+     *  * directory. If the file exists, Add the file to stage area
+     *  if it is not added or changed before</p>
+     *
+     * @param fileName the name of the file to add.
+     * @throws IOException if an I/O error occurs while reading the file.
+     * */
     public static void add(String fileName) throws IOException {
-        //Check Whether the file exists.
+        // Check Whether the file exists.
         File currentFile = join(CWD, fileName);
         if (!currentFile.exists()) {
             System.out.println("File does not exist.");
@@ -127,65 +133,84 @@ public class Repository implements Serializable {
 
         // Update
         StagingArea area = readObject(STAGING, StagingArea.class);
-        /* Copy file to Staged for addition area if changed. */
+        // Copy file to Staged for addition area if changed.
         updateArea(fileName, fileHash, area, fileContent);
     }
 
-    /** Check, then update STAGING file and add new blob to BLOB directory. */
-    private static void updateArea(String file, String hash, StagingArea area,
+    /** Helper method:
+     * update the staging area with a file.
+     *
+     * <p>Check whether the fileName is tracked in the head commit
+     * and if its contents are identical, then update the STAGING
+     * fileName and add new blob to BLOB directory.</p>
+     *
+     * @param fileName the name of the current file.
+     * @param fileHash the hash of the current file hash.
+     * @param area the area object.
+     * @param bytes the byte contents of the current file.
+     * @throws IOException if an I/O error occurs while reading the file.
+     * */
+    private static void updateArea(String fileName, String fileHash, StagingArea area,
                                    byte[] bytes) throws IOException {
-        /* Check the file if was added to headCommit and if the same content if added. */
+        /* */
         // Get headCommit Object and Status Object.
         String headHash = readContentsAsString(HEAD);
         File headFile = join(COMMIT, headHash);
 
         Status status = readObject(STATUS, Status.class);
-
         Commit headCommit = readObject(headFile, Commit.class);
 
         // Check remStage.
         Map<String, String> remMap = area.getStagedRem();
-        if (remMap.containsKey(file)) {
-            if (remMap.get(file).equals(hash)) {
-                remMap.remove(file);
+        if (remMap.containsKey(fileName)) {
+            if (remMap.get(fileName).equals(fileHash)) {
+                remMap.remove(fileName);
                 writeObject(STAGING, area);
-                status.remRemovedFiles(file);
+                status.remRemovedFiles(fileName);
                 writeObject(STATUS, status);
                 return;
             }
         }
         // Check
-        boolean hasKey = headCommit.getMap().containsKey(file);
+        boolean hasKey = headCommit.getMap().containsKey(fileName);
         if (hasKey) {
-            // The file was added to headCommit before.
+            // The fileName was added to headCommit before.
             /*   If content is different, add, else don't. */
-            if (!headCommit.compare(file, hash)) {
+            if (!headCommit.compare(fileName, fileHash)) {
                 // -> Update Area
-                area.updateAdd(file, hash);
+                area.updateAdd(fileName, fileHash);
                 writeObject(STAGING, area);
 
                 // -> Add Blob
-                updateBlob(hash, bytes);
+                updateBlob(fileHash, bytes);
 
-                //System.out.println("the first time add file");
+                //System.out.println("the first time add fileName");
             }
         } else {
-            // The file didn't be added to headCommit before.
+            // The fileName didn't be added to headCommit before.
             // -> Update Area
-            area.updateAdd(file, hash);
+            area.updateAdd(fileName, fileHash);
             writeObject(STAGING, area);
 
             // -> Add Blob
-            updateBlob(hash, bytes);
+            updateBlob(fileHash, bytes);
 
             // -> Add status
-            status.addStagedFile(file);
+            status.addStagedFile(fileName);
             writeObject(STATUS, status);
         }
         //System.out.println("nothing add");
     }
 
-    /** Do commit and clear Area. */
+    /** Main method:
+     * Do a normal commit and clear area.
+     *
+     * <p>The method is to commit with a message and clear area. The parent is
+     * the last commit, store as hash.</p>
+     *
+     * @param message the message of this commit.
+     * @throws IOException if an I/O error occurs while reading the file.
+     * */
     public static void commit(String message) throws IOException {
 
         boolean changedTable = false;
@@ -252,7 +277,17 @@ public class Repository implements Serializable {
         writeObject(STAGING, area);
     }
 
-    /** Do commit and clear Area. */
+    /** Main method:
+     * Do a merge commit and clear area.
+     *
+     * <p>The method is to commit with a message and clear area. The parent1 is
+     * the commit of the current branch, parent2 is the commit of another branch,
+     * both stores as hash.</p>
+     *
+     * @param message the message of this commit.
+     * @param parentHash2 the hash commit of another branch.
+     * @throws IOException if an I/O error occurs while reading the file.
+     * */
     public static void commit(String message,
                               String parentHash2) throws IOException {
 
@@ -891,7 +926,7 @@ public class Repository implements Serializable {
         Map<String, MergeHelper> helper = files(splitHash, thisBranch);
 
         /**
-         * conflict is an ini that present different stage of merge.
+         * conflict is an int that presents different stage of merge.
          *  conflict == 0 ---> there is no conflict.
          *  conflict == 1 ---> there is conflict.
          *  conflict == 2 ---> there is an untracked file in the way.

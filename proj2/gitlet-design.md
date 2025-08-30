@@ -1,10 +1,10 @@
 # Gitlet Design Document
 
-**Name**:
+**Name**:Garry
 
 ## Classes and Data Structures
 
-### Class 1
+### 
 
 #### Fields
 
