@@ -46,15 +46,16 @@ public class Repository implements Serializable {
     public static final File STAGING = join(GITLET_DIR, "staging");
 
 
-    /** Full construct (basic) .gitlet/ -- top level for all persistent data.
+    /**
+     * Full construct (basic) .gitlet/ -- top level for all persistent data.
      *              (basic) - split -- file containing a map object of branches headCommit hash.
      *              (basic) - commit/ -- director containing the Commit hash files.
      *              (basic) - blob/ -- director containing the Blobs of fileHash.
      *              (basic) - head -- file containing the head commit hash.
      *              (basic) - branch -- file containing current branch.
      *              (basic) - status -- fils containing status object.
-     *              (basic) - staging -- file containing the Staging Area.*/
-    /** Set StagingArea. */
+     *              (basic) - staging -- file containing the Staging Area.
+     */
 
     /** init basic construct. */
     public static void setupPersistence() throws IOException {
@@ -111,9 +112,11 @@ public class Repository implements Serializable {
     /** Main method:
      * Adds a file to the staging area in preparation for the next commit.
      *
-     * <p>The method checks whether the file exists in the working
-     *  * directory. If the file exists, Add the file to stage area
-     *  if it is not added or changed before</p>
+     * <p>
+     * The method checks whether the file exists in the working
+     * directory. If the file exists, Add the file to stage area
+     * if it is not added or changed before.
+     * </p>
      *
      * @param fileName the name of the file to add.
      * @throws IOException if an I/O error occurs while reading the file.
@@ -140,9 +143,11 @@ public class Repository implements Serializable {
     /** Helper method:
      * update the staging area with a file.
      *
-     * <p>Check whether the fileName is tracked in the head commit
+     * <p>
+     * Check whether the fileName is tracked in the head commit
      * and if its contents are identical, then update the STAGING
-     * fileName and add new blob to BLOB directory.</p>
+     * fileName and add new blob to BLOB directory.
+     * </p>
      *
      * @param fileName the name of the current file.
      * @param fileHash the hash of the current file hash.
@@ -205,8 +210,10 @@ public class Repository implements Serializable {
     /** Main method:
      * Do a normal commit and clear area.
      *
-     * <p>The method is to commit with a message and clear area. The parent is
-     * the last commit, store as hash.</p>
+     * <p>
+     * The method is to commit with a message and clear area. The parent is
+     * the last commit, store as hash.
+     * </p>
      *
      * @param message the message of this commit.
      * @throws IOException if an I/O error occurs while reading the file.
@@ -282,7 +289,8 @@ public class Repository implements Serializable {
      *
      * <p>The method is to commit with a message and clear area. The parent1 is
      * the commit of the current branch, parent2 is the commit of another branch,
-     * both stores as hash.</p>
+     * both stores as hash.
+     * </p>
      *
      * @param message the message of this commit.
      * @param parentHash2 the hash commit of another branch.
@@ -356,7 +364,13 @@ public class Repository implements Serializable {
         writeObject(STAGING, area);
     }
 
-    /** Add new Blob to BLOB directory. */
+    /** Help method:
+     * Add new Blob to BLOB directory.
+     *
+     * @param fileHash the hash of the current file.
+     * @param fileContent the content of the current file.
+     * @throws IOException if an I/O error occurs while reading the file.
+     */
     public static void updateBlob(String fileHash, byte[] fileContent) throws IOException {
         File newBlob = join(BLOB, fileHash);
 
@@ -368,7 +382,12 @@ public class Repository implements Serializable {
         writeObject(newBlob, /*(Serializable)*/ currentBlob);
     }
 
-    /** Add new Commit to Commit directory. */
+    /** Help method:
+     * Add new Commit to Commit directory.
+     *
+     * @param currentCommit the new commit.
+     * @throws IOException if an I/O error occurs while reading the file.
+     */
     public static void updateCommit(Commit currentCommit) throws IOException {
         // Serialized commit to byte.
         byte[] serializedData = serialize(currentCommit);
@@ -387,10 +406,18 @@ public class Repository implements Serializable {
         writeObject(initCommit, currentCommit);
     }
 
-    /** Remove the file if it is in add staged area; If it's not, check whether it was in head
-     *  commit, if it was, add it to remove staged area, remove it from Commit Object when next
-     *  commit, and remove the file from the working directory if the user has not already
-     *  done so (do not remove it unless it is tracked in the current commit).
+    /** Main method:
+     * Remove the file from CWD or stageArea.
+     *
+     * <p>
+     * Remove the file if it is in add staged area; If it's not, check whether it was in head
+     * commit, if it was, add it to remove staged area, remove it from Commit Object when next
+     * commit, and remove the file from the working directory if the user has not already
+     * done so (do not remove it unless it is tracked in the current commit).
+     * </p>
+     *
+     * @param rmFileName the name of the file you want to remove.
+     * @throws IOException if an I/O error occurs while reading the file.
      */
     public static void rm(String rmFileName) throws IOException {
         boolean removed = false;
@@ -449,7 +476,11 @@ public class Repository implements Serializable {
         }
     }
 
-    /** Get the head commit object. */
+    /** Help method:
+     * Get the head commit object.
+     *
+     * @return the head commit object.
+     */
     public static Commit getHeadCommit() {
         // Read head hash form HEAD
         String headHash = readContentsAsString(HEAD);
@@ -463,7 +494,12 @@ public class Repository implements Serializable {
         return currentCommit;
     }
 
-    /** Get any commit object. */
+    /** Help method:
+     * Get any commit object.
+     *
+     * @param commitHash the hash of the current commit.
+     * @return the head commit object.
+     */
     public static Commit getCommit(String commitHash) {
         File commitFile = join(COMMIT, commitHash);
         if (!commitFile.exists()) {
@@ -475,6 +511,21 @@ public class Repository implements Serializable {
         return commit;
     }
 
+    /** Main method:
+     * Prints the commit history starting from the current HEAD commit,
+     * following the parent chain backwards until the initial commit.
+     *
+     * <p>
+     * Process:
+     * 1. Read the current HEAD commit hash.
+     * 2. Print the commit information for the HEAD (via {@code printCommit}).
+     * 3. Iteratively follow each commit’s parent hash, printing details
+     *    until a commit with no parent is reached (the root commit).
+     * </p>
+     *
+     * This simulates the behavior of {@code git log}, but only for the
+     * current branch (no merge history is traversed).
+     */
     public static void log() {
         String headHash = readContentsAsString(HEAD);
         String parentHash = printCommit(headHash);
@@ -483,6 +534,18 @@ public class Repository implements Serializable {
         }
     }
 
+    /** Main method:
+     * Prints information for all commits stored in the repository,
+     * regardless of which branch they belong to.
+     *
+     * <p>
+     * Process:
+     * 1. Retrieve all commit hashes stored in the COMMIT directory.
+     * 2. For each commit hash, print its commit information using {@code printCommit}.
+     *</p>
+     *
+     * This simulates the behavior of {@code git log --all}.
+     */
     public static void globalLog() {
         List<String> allCommits = plainFilenamesIn(COMMIT);
         if (!allCommits.isEmpty()) {
@@ -492,6 +555,20 @@ public class Repository implements Serializable {
         }
     }
 
+    /** Main method:
+     * Finds and prints the commit hashes of all commits whose messages
+     * exactly match the given string.
+     *
+     * <p>
+     * Process:
+     * 1. Retrieve all commit hashes stored in the COMMIT directory.
+     * 2. For each commit, read its Commit object and compare its message
+     *    with the given message.
+     * 3. If a commit’s message matches exactly, print its hash.
+     * </p>
+     *
+     * @param message the commit message to search for
+     */
     public static void find(String message) {
         boolean output = false;
         List<String> allCommits = plainFilenamesIn(COMMIT);
@@ -511,6 +588,24 @@ public class Repository implements Serializable {
         }
     }
 
+    /** Help method:
+     * Prints the details of a commit.
+     *
+     * <p>
+     * Include:
+     *  - Commit hash.
+     *  - Merge information (if the commit has two parents).
+     *  - Date formatted as "EEE MMM d HH:mm:ss yyyy Z".
+     *  - Commit message.
+     * </p>
+     *
+     * If the commit has two parents, prints the first 7 characters of each
+     * parent hash to indicate a merge commit.
+     *
+     * @param fileName the hash of the commit to print
+     * @return the hash of the first parent of this commit (or null if none)
+     * @throws IllegalArgumentException if the commit file does not exist
+     */
     public static String printCommit(String fileName) {
         File currentFile = join(COMMIT, fileName);
         if (!currentFile.exists()) {
@@ -546,6 +641,21 @@ public class Repository implements Serializable {
         return parentHash1;
     }
 
+    /** Main method:
+     * Displays the current status of the repository.
+     *
+     * <p>
+     * include:
+     *  - The current branch.
+     *  - All branches in the repository.
+     *  - Staged files ready for commit.
+     *  - Removed files.
+     *  - Modified but unstaged files.
+     *  - Untracked files.
+     * </p>
+     *
+     * This method simulates the behavior of `git status` for the Gitlet project.
+     */
     public static void status() {
         if (!GITLET_DIR.exists()) {
             System.out.println("Not in an initialized Gitlet directory.");
@@ -589,6 +699,19 @@ public class Repository implements Serializable {
         System.out.println();
     }
 
+    /** Main method:
+     * Creates a new branch with the given name pointing to the current HEAD commit.
+     *
+     * <p>
+     * Steps:
+     * 1. Checks if a branch with the given name already exists; if so, prints an error.
+     * 2. Retrieves the current branch and HEAD commit hash.
+     * 3. Adds the new branch to the set of branches in Status.
+     * 4. Updates the split point mapping for the new branch in both Status and SPLIT.
+     * </p>
+     *
+     * @param branch the name of the new branch to create.
+     */
     public static void addBranch(String branch) {
         Map<String, String> splitMap = readObject(SPLIT, HashMap.class);
         Status status = readObject(STATUS, Status.class);
@@ -614,12 +737,26 @@ public class Repository implements Serializable {
         writeObject(SPLIT, (Serializable) splitMap);
     }
 
+    /** Help method:
+     * Restores a file from the current HEAD commit into the working directory.
+     *
+     * @param fileName the name of the file to restore.
+     * @throws IOException if file operations fail.
+     */
     public static void checkout1(String fileName) throws IOException {
         // Get head commit.
         Commit headCommit = getHeadCommit();
         checkout(headCommit, fileName);
     }
 
+    /** Help method:
+     * Restores a file from a specified commit into the working directory.
+     * Supports abbreviated commit hashes (first 8 characters).
+     *
+     * @param fileName   the name of the file to restore.
+     * @param commitHash the hash of the commit to restore from.
+     * @throws IOException if file operations fail.
+     */
     public static void checkout2(String fileName, String commitHash) throws IOException {
         Commit commit = null;
         if (commitHash.length() == 8) {
@@ -647,6 +784,24 @@ public class Repository implements Serializable {
         checkout(commit, fileName);
     }
 
+    /** Help method:
+     * Checks out a single file from the given commit into the working directory.
+     *
+     * <p>
+     * Steps:
+     * 1. Verify that the file exists in the commit; if not, print an error message.
+     * 2. Locate (or create) the corresponding file in the current working directory:
+     *  - If the file already exists, delete it first.
+     *  - Create a new empty file with the same name.
+     * 3. Retrieve the file's blob from the blob store using the hash recorded in the commit.
+     * 4. Write the blob's contents into the new file, effectively restoring the file
+     *    to its version from the given commit.
+     * </p>
+     *
+     * @param commit   the commit containing the desired version of the file.
+     * @param fileName the name of the file to check out.
+     * @throws IOException if file creation or writing fails.
+     */
     public static void checkout(Commit commit, String fileName) throws IOException {
         // Check whether the file exists in this commit.
         boolean hasKey = commit.getMap().containsKey(fileName);
@@ -674,6 +829,21 @@ public class Repository implements Serializable {
         writeContents(checkFile, fileContent);
     }
 
+    /** Help method.
+     *
+     * <p>
+     * Checks whether it is safe to checkout the given branch.
+     *  - Verifies that the branch exists.
+     *  - Prevents checking out the current branch.
+     *  - Ensures no untracked files in the working directory would be
+     *    overwritten by the branch checkout.
+     *  If any of these conditions fail, prints an appropriate error
+     *  message and returns without performing the checkout.
+     * </p>
+     *
+     * @param thisBranch the name of the branch to check.
+     * @throws IOException if reading from disk fails.
+     */
     public static void checkBranch(String thisBranch) throws IOException {
         // Get branches
         Status status = readObject(STATUS, Status.class);
@@ -749,6 +919,20 @@ public class Repository implements Serializable {
         writeObject(STAGING, area);
     }
 
+    /** Help method:
+     *
+     * <p>
+     * Cleans the current working directory (CWD) and recreates files
+     * based on the given commit mapping.
+     *  - Removes all files in CWD except the internal "gitlet" and ".gitlet" directories.
+     *  - For each file entry in the provided map, creates a new file if
+     *    necessary and writes the corresponding blob content into it.
+     * </p>
+     *
+     * @param map mapping of file names to blob hashes (from a commit).
+     * @param fileList list of file names currently in the working directory.
+     * @throws IOException if file creation or writing fails.
+     */
     public static void cleanCWDandMakeFiles(Map<String, String> map,
                                             List<String> fileList) throws IOException {
         // Clean CWE except "gitlet" and ".gitlet".
@@ -781,7 +965,14 @@ public class Repository implements Serializable {
         }
     }
 
-    /** Remove thisBranch if there is. */
+    /** Help method:
+     *
+     * <p>
+     * Remove the Branch if there is.
+     * </p>
+     *
+     * @param thisBranch the name of current branch.
+     */
     public static void remBranch(String thisBranch) {
         // Get status object
         Status status = readObject(STATUS, Status.class);
@@ -805,6 +996,19 @@ public class Repository implements Serializable {
         writeObject(STATUS, status);
     }
 
+    /** Main method:
+     *
+     * <p>
+     * Reset the current branch to the given commit:
+     *  - Replace working directory files with those in the commit.
+     *  - Remove tracked files missing in that commit.
+     *  - Move HEAD to the commit.
+     *  - Clear the staging area.
+     * </p>
+     *
+     * @param commitHash the hash of current commit.
+     * @throws IOException if file operations during merge fail.
+     */
     public static void reset(String commitHash) throws IOException {
         // Get current commit map.
         Commit currentCommit = getCommit(commitHash);
@@ -878,6 +1082,24 @@ public class Repository implements Serializable {
         writeContents(HEAD, commitHash);
     }
 
+    /** Main method:
+     * Performs a merge of the given branch into the current branch.
+     *
+     * <p>
+     * The method:
+     *  - Identifies the split point commit between the current branch head
+     *    and the given branch head.
+     *  - Compares file versions in the split, current head, and branch head
+     *    to determine necessary actions (checkout, stage, remove).
+     *  - Detects and marks conflicts if both branches modified a file
+     *    differently since the split point.
+     *  - Creates a new merge commit that has two parents (current head
+     *    and the given branch head).
+     * </p>
+     *
+     * @param thisBranch the name of the branch to merge into the current branch.
+     * @throws IOException if file operations during merge fail.
+     */
     public static void merge(String thisBranch) throws IOException {
         /* Check before merge. */
         // Get a status object.
@@ -926,7 +1148,7 @@ public class Repository implements Serializable {
         Map<String, MergeHelper> helper = files(splitHash, thisBranch);
 
         /**
-         * conflict is an int that presents different stage of merge.
+         * conflict is an int numebr that presents different stage of merge.
          *  conflict == 0 ---> there is no conflict.
          *  conflict == 1 ---> there is conflict.
          *  conflict == 2 ---> there is an untracked file in the way.
@@ -941,20 +1163,22 @@ public class Repository implements Serializable {
         commit("Merged " + thisBranch + " into " + currentBranch + ".", branchHash);
     }
 
-    public static List<String> getParents(String head) {
-        List<String> parents = new ArrayList<>();
-        Commit commit = getCommit(head);
-
-        if (commit.getParentHash1() != null) {
-            parents.add(commit.getParentHash1());
-        }
-        if (commit.getParentHash2() != null) {
-            parents.add(commit.getParentHash2());
-        }
-
-        return parents;
-    }
-
+    /** Help method:
+     * Finds the split point (lowest common ancestor commit) of two given
+     * commit heads.
+     *
+     * <p>
+     * The method:
+     *  - Collects all ancestors of head1.
+     *  - Performs a BFS from head2 until it reaches a commit that is also
+     *    an ancestor of head1.
+     *  - Returns that commit hash as the split point.
+     * </p>
+     *
+     * @param head1 the commit hash of the first branch head.
+     * @param head2 the commit hash of the second branch head.
+     * @return the commit hash of the split point, or null if none exists.
+     */
     public static String findSplitPoint(String head1, String head2) {
         // find all parent 1 ancestors of head1
         Set<String> ancestors1 = new HashSet<>();
@@ -979,6 +1203,40 @@ public class Repository implements Serializable {
         return null;
     }
 
+    /** Help method:
+     *
+     * <p>
+     * Get parents from commit hash of one branch head, and put them to a list.
+     * </p>
+     *
+     * @param head commit hash of one branch head.
+     * @return parents list.
+     */
+    public static List<String> getParents(String head) {
+        List<String> parents = new ArrayList<>();
+        Commit commit = getCommit(head);
+
+        if (commit.getParentHash1() != null) {
+            parents.add(commit.getParentHash1());
+        }
+        if (commit.getParentHash2() != null) {
+            parents.add(commit.getParentHash2());
+        }
+
+        return parents;
+    }
+
+    /** Help method:
+     *
+     * <p>
+     * Check the situation of all the files for merge.
+     * </p>
+     *
+     * @param helper a map from file name to a MergeHelper object containing
+     *        the three versions (split, head, branch).
+     * @return an int number that presents different stage of merge.
+     * @throws IOException if an I/O error occurs while reading the file.
+     */
     public static int check(Map<String, MergeHelper> helper) throws IOException {
         int conflict = 0;
         // Get WD files.
@@ -1032,7 +1290,6 @@ public class Repository implements Serializable {
                     } else {
                         conflict = rewriteForConflict(head, given, key);
                     }
-
                 } else if (Objects.equals(head, null)) {
                     continue;
                 } else {
@@ -1051,6 +1308,13 @@ public class Repository implements Serializable {
         return conflict;
     }
 
+    /** Help method:
+     * rewrite file content for the specific situation of merge.
+     *
+     * @param blobHash the bolb hash of the current file.
+     * @param fileName the file name of the current file.
+     * @throws IOException if an I/O error occurs while reading the file.
+     */
     public static void rewrite(String blobHash, String fileName) throws IOException {
         File file = join(CWD, fileName);
         if (!file.exists()) {
@@ -1063,44 +1327,32 @@ public class Repository implements Serializable {
         add(fileName);
     }
 
+    /** Help method:
+     * rewrite file content for the conflict situation of merge.
+     *
+     * @param blobHash1 the bolb hash of the current head file.
+     * @param blobHash2 the bolb hash of the current given file.
+     * @param fileName the file name of the current file.
+     * @return an int number that presents different stage of merge.
+     * @throws IOException if an I/O error occurs while reading the file.
+     */
     public static int rewriteForConflict(String blobHash1,
                                           String blobHash2, String fileName) throws IOException {
-        int conflict = 0;
         // Put the filet to CWD.
         File file = join(CWD, fileName);
         if (!file.exists()) {
             file.createNewFile();
         }
 
-        // Get files from BLOB, then write content to new files.
+        int conflict = 0;
         String fileContent1;
-        if (!Objects.equals(blobHash1, null)) {
-            File blobFile1 = join(BLOB, blobHash1);
-            Blob blob1 = readObject(blobFile1, Blob.class);
-            byte[] content = blob1.getContent();
-            if (Objects.equals(content, null)) {
-                fileContent1 = "";
-            } else {
-                fileContent1 =  new String(content, StandardCharsets.UTF_8);
-            }
-        } else {
-            fileContent1 = "";
-        }
-
         String fileContent2;
-        if (!Objects.equals(blobHash2, null)) {
-            File blobFile2 = join(BLOB, blobHash2);
-            Blob blob2 = readObject(blobFile2, Blob.class);
-            byte[] content = blob2.getContent();
-            if (Objects.equals(content, null)) {
-                fileContent2 = "";
-            } else {
-                fileContent2 =  new String(content, StandardCharsets.UTF_8);
-            }
-        } else {
-            fileContent2 = "";
-        }
 
+        // Get files from BLOB
+        fileContent1 = getConflictContent(blobHash1);
+        fileContent2 = getConflictContent(blobHash2);
+
+        // write contents to new files.
         String a = "<<<<<<< HEAD" + "\n";
         String b = "=======" + "\n";
         String c = ">>>>>>>" + "\n";
@@ -1112,6 +1364,52 @@ public class Repository implements Serializable {
         return conflict;
     }
 
+    /** Help method:
+     * Retrieves the content of a blob for resolving merge conflicts.
+     *
+     * <P>
+     * Returns the file content from the blob identified by the given hash.
+     * Used specifically during merge conflict handling to retrieve the
+     * conflicting version of a file.
+     * </P>
+     *
+     * @param blobHash blob hash of the current file.
+     * @return file content.
+     */
+    public static String getConflictContent(String blobHash) {
+        String fileContent;
+
+        if (!Objects.equals(blobHash, null)) {
+            File blobFile1 = join(BLOB, blobHash);
+            Blob blob1 = readObject(blobFile1, Blob.class);
+            byte[] content = blob1.getContent();
+            if (Objects.equals(content, null)) {
+                fileContent = "";
+            } else {
+                fileContent =  new String(content, StandardCharsets.UTF_8);
+            }
+        } else {
+            fileContent = "";
+        }
+
+        return fileContent;
+    }
+
+    /** Help method:
+     * Maps each file to its versions in the split point,
+     * head, and branch commits for merge conflict detection.
+     *
+     * <p>
+     * Builds a mapping from file names to their corresponding versions
+     * (blobs) in the split point, the current head commit, and the given
+     * branch commit. Used during merge to detect changes and conflicts.
+     * </p>
+     *
+     * @param splitHash   the commit hash of the split point.
+     * @param thisBranch  the name of the branch being merged.
+     * @return a map from file name to a MergeHelper object containing
+     *         the three versions (split, head, branch).
+     */
     public static Map<String, MergeHelper> files(String splitHash, String thisBranch) {
         // Get branchMap.
         Map<String, String> branchesMap = readObject(SPLIT, HashMap.class);
@@ -1129,16 +1427,16 @@ public class Repository implements Serializable {
         Map<String, String> splitMap = splitCommit.getMap();
 
         // Create a set to store files.
-        Set<String> files = new HashSet<>();
+        Set<String> filesName = new HashSet<>();
 
-        files = fillSet(files, splitMap);
-        files = fillSet(files, headMap);
-        files = fillSet(files, branchMap);
+        filesName = fillSet(filesName, splitMap);
+        filesName = fillSet(filesName, headMap);
+        filesName = fillSet(filesName, branchMap);
 
         // Create a map to store fileName and its three blobs.
         Map<String, MergeHelper> helper = new HashMap<>();
         // Store.
-        for (String fileName : files) {
+        for (String fileName : filesName) {
             String split = splitMap.get(fileName);
             String head = headMap.get(fileName);
             String branch = branchMap.get(fileName);
@@ -1148,12 +1446,19 @@ public class Repository implements Serializable {
         return helper;
     }
 
-    public static Set<String> fillSet(Set<String> set,
+    /** Help method:
+     * to store files from map to set.
+     *
+     * @param filesName a set to store file name.
+     * @param map a map containing the three versions (split, head, branch)
+     * @return the set.
+     */
+    public static Set<String> fillSet(Set<String> filesName,
                                       Map<String, String> map) {
         for (Map.Entry<String, String> entry : map.entrySet()) {
             String key = entry.getKey();
-            set.add(key);
+            filesName.add(key);
         }
-        return set;
+        return filesName;
     }
 }

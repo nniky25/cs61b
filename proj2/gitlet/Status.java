@@ -22,10 +22,6 @@ public class Status implements Serializable {
         splitHash.put(point, hash);
     }
 
-    public void remSplitHash(String point) {
-        splitHash.remove(point);
-    }
-
     public String getSplitHash(String point) {
         return splitHash.get(point);
     }
