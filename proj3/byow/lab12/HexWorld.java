@@ -99,8 +99,8 @@ public class HexWorld {
                 middlePointY = middlePointY + 2*size;
 
                 // Update current point
-                //x = middlePointX;
-                //y = middlePointY;
+                x = middlePointX;
+                y = middlePointY;
             }
 
             // save the X and Y for last middle point
