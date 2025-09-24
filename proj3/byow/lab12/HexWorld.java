@@ -20,6 +20,26 @@ public class HexWorld {
     private static final long SEED = 23454;
     private static final Random RANDOM = new Random(SEED);
 
+    /**
+     * The class for save all key points for the graph.
+     * And save them from two parts.
+     * The first part is top of the graph. (15 points)
+     * The second part is bottom of the graph. (4 points)
+     *
+     * (every '#' means one hexagon.)
+     *
+     *   ~~~~~~~~~~~~~~~~~~~~~
+     *   |         #         |
+     *   |     #       #     |
+     *   |  #      #      #  |
+     *   |     #       #     |
+     *   |  #      #      #  |
+     *   |     #       #     |
+     *   |  #      #      #  |
+     *   |     #       #     |
+     *   |         #         |
+     *   ~~~~~~~~~~~~~~~~~~~~~
+     */
     public static class KeyPoints {
         private int index;                                  // the index of every key point in array keyPoints
         private final int size;                             // the size of hexagonal region
@@ -33,7 +53,7 @@ public class HexWorld {
         }
 
         /**
-         * To create and 2D array to save all X and Y of keyPoints
+         * To create 2D array to save all X and Y of keyPoints.
          *
          * @return the 2D array
          */
@@ -44,6 +64,11 @@ public class HexWorld {
             updatePartTwo(lastPointOfPartOne[0], lastPointOfPartOne[1]);
         }
 
+        /**
+         * get the 2D array.
+         *
+         * @return the 2D array
+         */
         public int[][] getKeyPoints() {
             buildKeyPoints();
 
@@ -53,6 +78,19 @@ public class HexWorld {
         /**
          * Update part one key points, save 15 points.
          *
+         * (every '#' means one hexagon.)
+         *
+         *   ~~~~~~~~~~~~~~~~~~~~~
+         *   |         #         |
+         *   |     #       #     |
+         *   |  #      @      #  |
+         *   |     @       @     |
+         *   |  @      &      @  |
+         *   |     &       &     |
+         *   |  &             &  |
+         *   |                   |
+         *   |                   |
+         *   ~~~~~~~~~~~~~~~~~~~~~
          * @return an array includes X and Y for the last middle point
          */
         private int[] updatePartOne() {
@@ -112,6 +150,19 @@ public class HexWorld {
 
         /**
          * Update part two key points, save 4 points.
+         * (every '#' means one hexagon.)
+         *
+         *   ~~~~~~~~~~~~~~~~~~~~~
+         *   |                   |
+         *   |                   |
+         *   |                   |
+         *   |                   |
+         *   |                   |
+         *   |                   |
+         *   |         #         |
+         *   |     @       *     |
+         *   |         #         |
+         *   ~~~~~~~~~~~~~~~~~~~~~
          *
          * @param x the X of the last middle point after part one
          * @param y the Y of the last middle point after part one
@@ -161,9 +212,17 @@ public class HexWorld {
         return keyPoints.getKeyPoints();
     }
 
+    /**
+     * Save all points of one hexagon.
+     *
+     * @param x X of the key point
+     * @param y Y of the key point
+     * @param size the size of the hexagon
+     * @return 2D array saved all points of this hexgon
+     */
     public static int[][] saveHexPoints(int x, int y, int size) {
         int index = 0;                        // index for point in the array
-        int number = (4*size - 2) * size;            // the number of points(两个梯形的面积公式)
+        int number = (4*size - 2) * size;     // the number of points(两个梯形的面积公式)
         int[][] points = new int[number][2];  // 2D array to save points
         int currentX = x;
         int currentY = y;
@@ -276,7 +335,6 @@ public class HexWorld {
         for (int i = 0; i < keyPoints.length; i++) {
             x = keyPoints[i][0];
             y = keyPoints[i][1];
-            System.out.println("(" + x + "," + y + ")");
 
             currentHex = randomTile();
             hexPoints = saveHexPoints(x, y, size);
@@ -284,6 +342,9 @@ public class HexWorld {
             for (int j = 0; j < hexPoints.length; j++) {
                 x = hexPoints[j][0];
                 y = hexPoints[j][1];
+
+                // 额外功能-变化色
+                currentHex = currentHex.colorVariant(currentHex, 50, 10, 10, RANDOM);
 
                 blackWorld[x][y] = currentHex;
             }
@@ -319,6 +380,4 @@ public class HexWorld {
 
         ter.renderFrame(randomTiles);
     }
-
-
 }
