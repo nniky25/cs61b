@@ -374,6 +374,12 @@ public class HexWorld {
         TERenderer ter = new TERenderer();
 
         int size = getRandomSize();
+        /*
+         * 可以自定义size
+         *
+         * 例：
+         * int size = 4;
+         */
         TETile[][] randomTiles = fillWithTiles(size);
 
         ter.initialize(WIDTH, HEIGHT);
