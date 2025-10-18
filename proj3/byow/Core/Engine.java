@@ -88,7 +88,7 @@ public class Engine {
     }*/
 
     public static void fillRooms(TETile[][] world) {
-        long SEED = 1238;
+        long SEED = 1237;
         // 得到房间的坐标点
         Position position = new Position(SEED);
         int [][] roomPoints = position.getRoomPoints();
@@ -172,7 +172,7 @@ public class Engine {
     // 检查此空白区域是否为走廊拐角
     private static boolean hasAdjacentFloor(TETile[][] world, int x, int y) {
         // 检查上下左右四个方向
-        int[][] directions = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+        int[][] directions = {{1, 1}, {-1, -1}, {1, -1}, {-1, 1}};
 
         for (int[] dir : directions) {
             int nx = x + dir[0];

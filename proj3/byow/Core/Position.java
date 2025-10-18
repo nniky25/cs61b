@@ -27,8 +27,8 @@ public class Position {
         int count = 0;
         for (int i = 0; i < MAX_ROOMS; i++) {
             if (randomForPositon()) {
-                int x = RANDOM.nextInt(WIDTH - 15) + 5;
-                int y = RANDOM.nextInt(HEIGHT - 15) + 5;
+                int x = RANDOM.nextInt(WIDTH - 11) + 5;
+                int y = RANDOM.nextInt(HEIGHT - 11) + 5;
 
                 // 检查是否与已有房间太近
                 boolean tooClose = false;

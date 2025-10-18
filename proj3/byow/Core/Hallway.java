@@ -15,7 +15,7 @@ public class Hallway {
         int x2 = room2.getCenterX();
         int y2 = room2.getCenterY();
 
-        // 随机选择先横向还是先纵向
+        /*// 随机选择先横向还是先纵向
         if (randomForSort()) {
             // 先横向，再纵向
             drawHorizontalHallway(world, x1, x2, y1);
@@ -24,7 +24,46 @@ public class Hallway {
             // 先纵向，再横向
             drawVerticalHallway(world, y1, y2, x1);
             drawHorizontalHallway(world, x1, x2, y2);
+        }*/
+
+        // 检查两种L型路径，选择重叠较少的
+        int overlap1 = checkOverlap(world, x1, y1, x2, y2);  // 先横后竖
+        int overlap2 = checkOverlap(world, x2, y2, x1, y1);  // 先竖后横
+
+        if (overlap1 <= overlap2) {
+            // 先横向，再纵向
+            drawHorizontalHallway(world, x1, x2, y1);
+            drawVerticalHallway(world, y1, y2, x2);
+        } else {
+            // 先纵向，再横向
+            drawVerticalHallway(world, y1, y2, x1);
+            drawHorizontalHallway(world, x1, x2, y2);
         }
+    }
+
+    // 计算路径上有多少个已经是地板的格子
+    private static int checkOverlap(TETile[][] world, int x1, int y1, int x2, int y2) {
+        int overlap = 0;
+
+        // 横向部分
+        int minX = Math.min(x1, x2);
+        int maxX = Math.max(x1, x2);
+        for (int x = minX; x <= maxX; x++) {
+            if (world[x][y1].equals(Tileset.FLOOR)) {
+                overlap++;
+            }
+        }
+
+        // 纵向部分
+        int minY = Math.min(y1, y2);
+        int maxY = Math.max(y1, y2);
+        for (int y = minY; y <= maxY; y++) {
+            if (world[x2][y].equals(Tileset.FLOOR)) {
+                overlap++;
+            }
+        }
+
+        return overlap;
     }
 
     // 绘制横向走廊

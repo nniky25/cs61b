@@ -4,10 +4,11 @@ import byow.TileEngine.TETile;
 import byow.TileEngine.Tileset;
 import static byow.Core.Engine.WIDTH;
 import static byow.Core.Engine.HEIGHT;
+import static byow.Core.Position.RANDOM;
 
 public class Room {
-    private int x;      // 房间中心的 x 坐标
-    private int y;      // 房间中心的 y 坐标
+    private int x;      // 房间左下角的 x 坐标
+    private int y;      // 房间左下角的 y 坐标
     private int width;  // 房间宽度
     private int height; // 房间高度
 
@@ -67,6 +68,19 @@ public class Room {
     public int getHeight() { return height; }
 
     // 获取房间中心点（用于连接走廊）
-    public int getCenterX() { return x + width / 2; }
-    public int getCenterY() { return y + height / 2; }
+    public int getCenterX() {
+        return x + width / 2;
+    }
+    public int getCenterY() {
+        return y + height / 2;
+    }
+
+    /*private static boolean randomForSort() {
+        int number = RANDOM.nextInt(2);
+        switch (number) {
+            case 0: return true;
+            case 1: return false;
+        }
+        return false;
+    }*/
 }
