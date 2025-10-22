@@ -11,7 +11,7 @@ import static byow.Core.Position.RANDOM;
 import static byow.lab12.HexWorld.getRandomSize;
 
 public class Engine {
-    TERenderer ter = new TERenderer();
+    static TERenderer ter = new TERenderer();
     /* Feel free to change the width and height. */
     public static final int WIDTH = 80;
     public static final int HEIGHT = 40;
@@ -55,10 +55,6 @@ public class Engine {
         // that works for many different input types.
 
         TETile[][] world = null;
-
-        long SEED = 123;
-        Random RANDOM = new Random(SEED);
-
         return world;
     }
 
@@ -188,7 +184,6 @@ public class Engine {
     }
 
     public static void main(String[] args) {
-        TERenderer ter = new TERenderer();
 
         TETile[][] world = new TETile[WIDTH][HEIGHT];
         fillTheWorldWithNothing(world);
