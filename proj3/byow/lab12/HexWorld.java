@@ -17,7 +17,7 @@ public class HexWorld {
     private static int HEIGHT;
     private static final int numberOfHex = 19;
 
-    private static final long SEED = 23454;
+    private static final long SEED = 2341;
     private static final Random RANDOM = new Random(SEED);
 
     /**
@@ -374,12 +374,11 @@ public class HexWorld {
         TERenderer ter = new TERenderer();
 
         int size = getRandomSize();
-        /*
-         * 可以自定义size
+         /** 可以自定义size
          *
          * 例：
-         * int size = 4;
-         */
+         * int size = 4;*/
+
         TETile[][] randomTiles = fillWithTiles(size);
 
         ter.initialize(WIDTH, HEIGHT);

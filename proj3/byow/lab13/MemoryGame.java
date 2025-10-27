@@ -6,9 +6,20 @@ import edu.princeton.cs.introcs.StdDraw;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 
+/**
+ * 实现了：
+ * - game1 --- 记忆单词，30个为通关
+ * - game2 --- 记忆字母，长度逐渐增加
+ * - 可以删除输入的字符
+ * - 结束后按住回车可以重新开始游戏
+ * - 结束后按住删除可以切换游戏
+ */
 public class MemoryGame {
+    private static MemoryGame game;
     /** The width of the window of this game. */
     private int width;
     /** The height of the window of this game. */
@@ -22,6 +33,8 @@ public class MemoryGame {
     /** Whether or not it is the player's turn. Used in the last section of the
      * spec, 'Helpful UI'. */
     private boolean playerTurn;
+    /*TO store words have tested*/
+    private Set<Integer> testedWords = new HashSet<>();
     /** The characters we generate random Strings from. */
     private static final char[] CHARACTERS = "abcdefghijklmnopqrstuvwxyz".toCharArray();
     /** Encouraging phrases. Used in the last section of the spec, 'Helpful UI'. */
@@ -60,6 +73,13 @@ public class MemoryGame {
             {"significant", "重要的；有意义的"},
             {"tend", "倾向于；照顾"}
     };
+    /*// Test
+    private static final String[][] WORDS = {
+            {"abstract", "抽象的；摘要"},
+            {"allocate", "分配；拨给"},
+            {"analyze", "分析；分解"}
+    };*/
+
 
     public static void main(String[] args) {
         if (args.length < 1) {
@@ -67,8 +87,14 @@ public class MemoryGame {
             return;
         }
 
-        long seed = Long.parseLong(args[0]);
-        MemoryGame game = new MemoryGame(40, 40, seed);
+        // 每次运行结果不同，Random默认基于时间创建随机随机数对象
+        Random random = new Random();
+        long seed = random.nextInt(100);
+
+        /*// 每次运行结果相同，random基于随机数种子
+        long seed = Long.parseLong(args[0]);*/
+
+        game = new MemoryGame(40, 40, seed);
         game.startGame2();
     }
 
@@ -106,16 +132,6 @@ public class MemoryGame {
     public void drawFrame(String s) {
         //TODO: Take the string and display it in the center of the screen
 
-        /*// 把板子背景刷新成黑色
-        StdDraw.clear(StdDraw.BLACK);
-        // 设置字体颜色
-        StdDraw.setPenColor(StdDraw.WHITE);
-        // 设置动画效果
-        StdDraw.enableDoubleBuffering();
-        // 绘画
-        StdDraw.text(0.5, 0.5, s);
-        StdDraw.line(0, 0.95, 1, 0.95);
-        StdDraw.show();*/
         // 逐字显示
         for (int i = 0; i <= s.length(); i++) {
             StdDraw.clear(StdDraw.BLACK);
@@ -133,6 +149,27 @@ public class MemoryGame {
         StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.line(0, height - height / 12.0, width, height - height / 12.0);
         StdDraw.show();
+
+        //TODO: If game is not over, display relevant game information at the top of the screen
+    }
+
+    public void drawFrameForType(String s) {
+        for (int i = 0; i <= s.length(); i++) {
+            StdDraw.clear(StdDraw.BLACK);
+            StdDraw.setPenColor(StdDraw.WHITE);
+            StdDraw.line(0, height - height / 12.0, width, height - height / 12.0);
+
+            String substring = s.substring(0, i);  // 逐渐增加显示的字符
+            StdDraw.text(width / 2.0, height - height / 24.0, substring);
+
+            StdDraw.show();
+            StdDraw.pause(10);  // ⭐ 暂停100毫秒，产生动画效果
+        }
+        /*StdDraw.pause(500);
+        StdDraw.clear(StdDraw.BLACK);
+        StdDraw.setPenColor(StdDraw.WHITE);
+        StdDraw.line(0, height - height / 12.0, width, height - height / 12.0);
+        StdDraw.show();*/
 
         //TODO: If game is not over, display relevant game information at the top of the screen
     }
@@ -157,7 +194,7 @@ public class MemoryGame {
         //TODO: If game is not over, display relevant game information at the top of the screen
     }
 
-    public void drawFameWithPng(String s) {
+    public void drawFrameWithPng(String s, int photoNumber) {
         //TODO: Take the string and display it in the center of the screen
         // 逐字显示
         for (int i = 0; i <= s.length(); i++) {
@@ -174,8 +211,18 @@ public class MemoryGame {
 
         StdDraw.pause(1000);
         StdDraw.clear(StdDraw.BLACK);
+
         String filename = "byow/lab13/photo1.png";
         StdDraw.picture(width / 2.0, height / 2.0, filename);
+
+        if (photoNumber == 1) {
+            filename = "byow/lab13/photo1.png";
+            StdDraw.picture(width / 2.0, height / 2.0, filename);
+        } else if (photoNumber == 2) {
+            filename = "byow/lab13/photo2.png";
+            StdDraw.picture(width / 2.0, height / 2.0, filename, 40, 40);
+
+        }
         StdDraw.show();
         //TODO: If game is not over, display relevant game information at the top of the screen
     }
@@ -251,10 +298,15 @@ public class MemoryGame {
             //StdDraw.show();
             StdDraw.pause(500);
 
-            // 生成随机字符串
-            //String target = generateRandomString(round);
-            String enTraget = WORDS[round - 1][0];
-            String cnTraget2 = WORDS[round - 1][1];
+            // 给出随机的单词,默认基于时间生称Random
+            Random randForWord = new Random();
+            int number = randForWord.nextInt(WORDS.length);
+            while (!testedWords.add(number)) {
+                number =  randForWord.nextInt(WORDS.length);
+            }
+            String enTraget = WORDS[number][0];
+            String cnTraget2 = WORDS[number][1];
+
 
             // 闪烁显示目标字符串
             //flashSequence(traget);
@@ -264,7 +316,7 @@ public class MemoryGame {
             StdDraw.clear(Color.BLACK);
             StdDraw.line(0, height - height / 12.0, width, height - height / 12.0);
             StdDraw.setPenColor(Color.WHITE);
-            drawFrame("Type english word!");
+            drawFrameForType("Type english word!");
             StdDraw.show();
             StdDraw.pause(100);
 
@@ -274,6 +326,19 @@ public class MemoryGame {
 
             // 检查是否正确
             if (playerInput.equals(enTraget)) {
+                if (testedWords.size() == WORDS.length) {
+                    gameOver = true;
+
+                    // 显示游戏结束信息
+                    StdDraw.clear(Color.BLACK);
+                    StdDraw.setPenColor(Color.WHITE);
+                    Font gameOverFont = new Font("Monaco", Font.BOLD, 30);
+                    StdDraw.setFont(gameOverFont);
+                    //StdDraw.text(width / 2.0, height / 2.0 + 2, "Game Over!");
+                    drawFrameWithPng("You win!", 2);
+                    //StdDraw.text(width / 2.0, height / 2.0 - 2, "You made it to round: " + round);
+                    StdDraw.show();
+                }
                 round++;
             } else {
                 gameOver = true;
@@ -285,9 +350,27 @@ public class MemoryGame {
                 StdDraw.setFont(gameOverFont);
                 drawFrame("Game Over!");
                 //StdDraw.text(width / 2.0, height / 2.0 + 2, "Game Over!");
-                drawFameWithPng("You made it to word: " + round);
+                drawFrameWithPng("You made it to word: " + round, 1);
                 //StdDraw.text(width / 2.0, height / 2.0 - 2, "You made it to round: " + round);
                 StdDraw.show();
+                // Regame
+                boolean newGame = false;
+                while (!newGame) {
+                    if (StdDraw.hasNextKeyTyped()) {
+                        // 获取按下的键
+                        char key = StdDraw.nextKeyTyped();
+                        // 检查是否为回车键
+                        if (key == '\n') {
+                            game.startGame1();
+                            newGame = true;
+                        } else if (key == '\b') {
+                            game.startGame2();
+                            newGame = true;
+                        }
+                    }
+                    // 暂停50毫秒，避免CPU占用过高
+                    StdDraw.pause(50);
+                }
             }
         }
     }
@@ -318,7 +401,7 @@ public class MemoryGame {
             StdDraw.clear(Color.BLACK);
             StdDraw.line(0, height - height / 12.0, width, height - height / 12.0);
             StdDraw.setPenColor(Color.WHITE);
-            drawFrame("Type it!");
+            drawFrameForType("Type it!" + target);
             StdDraw.show();
             StdDraw.pause(100);
 
@@ -328,6 +411,19 @@ public class MemoryGame {
 
             // 检查是否正确
             if (playerInput.equals(target)) {
+                if (round == 9) {
+                    gameOver = true;
+
+                    // 显示游戏结束信息
+                    StdDraw.clear(Color.BLACK);
+                    StdDraw.setPenColor(Color.WHITE);
+                    Font gameOverFont = new Font("Monaco", Font.BOLD, 30);
+                    StdDraw.setFont(gameOverFont);
+                    //StdDraw.text(width / 2.0, height / 2.0 + 2, "Game Over!");
+                    drawFrameWithPng("You win!", 2);
+                    //StdDraw.text(width / 2.0, height / 2.0 - 2, "You made it to round: " + round);
+                    StdDraw.show();
+                }
                 round++;
             } else {
                 gameOver = true;
@@ -339,9 +435,27 @@ public class MemoryGame {
                 StdDraw.setFont(gameOverFont);
                 drawFrame("Game Over!");
                 //StdDraw.text(width / 2.0, height / 2.0 + 2, "Game Over!");
-                drawFameWithPng("You made it to round: " + round);
+                drawFrameWithPng("You made it to round: " + round, 1);
                 //StdDraw.text(width / 2.0, height / 2.0 - 2, "You made it to round: " + round);
                 StdDraw.show();
+                // Regame
+                boolean newGame = false;
+                while (!newGame) {
+                    if (StdDraw.hasNextKeyTyped()) {
+                        // 获取按下的键
+                        char key = StdDraw.nextKeyTyped();
+                        // 检查是否为回车键
+                        if (key == '\n') {
+                            game.startGame2();
+                            newGame = true;
+                        } else if (key == '\b') {
+                            game.startGame1();
+                            newGame = true;
+                        }
+                    }
+                    // 暂停50毫秒，避免CPU占用过高
+                    StdDraw.pause(50);
+                }
             }
         }
     }

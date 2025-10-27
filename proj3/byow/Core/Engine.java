@@ -3,7 +3,9 @@ package byow.Core;
 import byow.TileEngine.TERenderer;
 import byow.TileEngine.TETile;
 import byow.TileEngine.Tileset;
+import edu.princeton.cs.introcs.StdDraw;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -14,7 +16,11 @@ public class Engine {
     static TERenderer ter = new TERenderer();
     /* Feel free to change the width and height. */
     public static final int WIDTH = 80;
+    public static boolean gameOver;
+    private static long SEED = 222;
     public static final int HEIGHT = 40;
+    public static int[] role = new int[2];
+    public static int[] door = new int[2];
     public static ArrayList<Room> roomsList = new ArrayList<>();
 
     /**
@@ -29,18 +35,18 @@ public class Engine {
      * of characters (for example, "n123sswwdasdassadwas", "n123sss:q", "lwww". The engine should
      * behave exactly as if the user typed these characters into the engine using
      * interactWithKeyboard.
-     *
+     * <p>
      * Recall that strings ending in ":q" should cause the game to quite save. For example,
      * if we do interactWithInputString("n123sss:q"), we expect the game to run the first
      * 7 commands (n123sss) and then quit and save. If we then do
      * interactWithInputString("l"), we should be back in the exact same state.
-     *
+     * <p>
      * In other words, both of these calls:
-     *   - interactWithInputString("n123sss:q")
-     *   - interactWithInputString("lww")
-     *
+     * - interactWithInputString("n123sss:q")
+     * - interactWithInputString("lww")
+     * <p>
      * should yield the exact same world state as:
-     *   - interactWithInputString("n123sssww")
+     * - interactWithInputString("n123sssww")
      *
      * @param input the input string to feed to your program
      * @return the 2D TETile[][] representing the state of the world
@@ -58,10 +64,12 @@ public class Engine {
         return world;
     }
 
-    /** Fill the world with nothing. */
+    /**
+     * Fill the world with nothing.
+     */
     private static void fillTheWorldWithNothing(TETile[][] world) {
         for (int i = 0; i < WIDTH; i++) {
-            for (int j = 0; j < HEIGHT; j ++) {
+            for (int j = 0; j < HEIGHT; j++) {
                 world[i][j] = Tileset.NOTHING;
             }
         }
@@ -84,10 +92,9 @@ public class Engine {
     }*/
 
     public static void fillRooms(TETile[][] world) {
-        long SEED = 1237;
         // 得到房间的坐标点
-        Position position = new Position(SEED);
-        int [][] roomPoints = position.getRoomPoints();
+        Position position = new Position(SEED++);
+        int[][] roomPoints = position.getRoomPoints();
 
         // 在每个点上创建房间
         for (int i = 0; i < roomPoints.length; i++) {
@@ -184,15 +191,146 @@ public class Engine {
     }
 
     public static void main(String[] args) {
-
+        gameOver = false;
         TETile[][] world = new TETile[WIDTH][HEIGHT];
+
+        world = madeNewWorld(world);
+
+        ter.initialize(WIDTH, HEIGHT);
+        ter.renderFrame(world);
+
+        while (!gameOver) {
+            updateWorld(world);
+        }
+    }
+
+    public static TETile[][] madeNewWorld(TETile[][] world) {
+        roomsList.clear();
         fillTheWorldWithNothing(world);
         fillRooms(world);
         connectAllRooms(world, roomsList);
         fixAllWalls(world);
+        setRole(world);
+        setDoor(world);
 
-        ter.initialize(WIDTH, HEIGHT);
+        return world;
+    }
 
-        ter.renderFrame(world);
+    public static void updateRoleInWorld(TETile[][] world) {
+        world[role[0]][role[1]] = Tileset.AVATAR;
+    }
+
+    public static void setRole(TETile[][] world) {
+        Room roleRoom = roomsList.get(0);
+        int x = roleRoom.getX();
+        int y = roleRoom.getY();
+        role[0] = x;
+        role[1] = y;
+
+        world[role[0]][role[1]] = Tileset.AVATAR;
+    }
+
+    public static void setDoor(TETile[][] world) {
+        Room doorRoom = roomsList.getLast();
+        int x = doorRoom.getX();
+        int y = doorRoom.getY();
+        door[0] = x;
+        door[1] = y;
+        world[door[0]][door[1]] = Tileset.FLOWER;
+    }
+
+    public static boolean run(char step, TETile[][] world) {
+        boolean canrun = false;
+        int[] station = new int[2];
+        int[][] directions = {{-1, 0}, {1, 0}, {0, 1}, {0, -1}};
+        if (canMove()) {
+            if (Character.toLowerCase(step) == 'a') {
+                station[0] = role[0] + directions[0][0];
+                station[1] = role[1];
+                if (world[station[0]][station[1]].equals(Tileset.FLOOR)) {
+                    world[role[0]][role[1]] = Tileset.FLOOR;
+                    role[0] = station[0];
+                    role[1] = station[1];
+                    canrun = true;
+                } else if (world[station[0]][station[1]].equals(Tileset.FLOWER)) {
+                    madeNewWorld(world);
+                    canrun = true;
+                }
+            } else if (Character.toLowerCase(step) == 'd') {
+                station[0] = role[0] + directions[1][0];
+                station[1] = role[1];
+                if (world[station[0]][station[1]].equals(Tileset.FLOOR)) {
+                    world[role[0]][role[1]] = Tileset.FLOOR;
+                    role[0] = station[0];
+                    role[1] = station[1];
+                    canrun = true;
+                } else if (world[station[0]][station[1]].equals(Tileset.FLOWER)) {
+                    madeNewWorld(world);
+                    canrun = true;
+                }
+            } else if (Character.toLowerCase(step) == 's') {
+                station[1] = role[1] + directions[3][1];
+                station[0] = role[0];
+                if (world[station[0]][station[1]].equals(Tileset.FLOOR)) {
+                    world[role[0]][role[1]] = Tileset.FLOOR;
+                    role[0] = station[0];
+                    role[1] = station[1];
+                    canrun = true;
+                } else if (world[station[0]][station[1]].equals(Tileset.FLOWER)) {
+                    madeNewWorld(world);
+                    canrun = true;
+                }
+            } else if (Character.toLowerCase(step) == 'w') {
+                station[1] = role[1] + directions[2][1];
+                station[0] = role[0];
+                    if (world[station[0]][station[1]].equals(Tileset.FLOOR)) {
+                        world[role[0]][role[1]] = Tileset.FLOOR;
+                        role[0] = station[0];
+                        role[1] = station[1];
+                        canrun = true;
+                    } else if (world[station[0]][station[1]].equals(Tileset.FLOWER)) {
+                        madeNewWorld(world);
+                        canrun = true;
+                    }
+            }
+        }
+        return canrun;
+    }
+
+    public static boolean canMove() {
+        if (role[0] > 0 && role[0] < WIDTH && role[1] > 0 && role[1] < HEIGHT) {
+            return true;
+        }
+        return false;
+    }
+
+    /*public void startGame1() {
+        //TODO: Set any relevant variables before the game starts
+        //TODO: Establish Engine loop
+        gameOver = false;
+
+        while (!gameOver) {
+            updateWorld(world);
+        }
+    }*/
+
+    public static void updateWorld(TETile[][] world) {
+        //TODO: Read n letters of player input
+        String input = "";  // 用于存储用户输入的字符串
+        if (StdDraw.hasNextKeyTyped()) {
+            // 获取按下的键
+            char key = StdDraw.nextKeyTyped();
+
+            // 检查字符
+            run(key, world);
+            updateRoleInWorld(world);
+            input += key;  // 添加新字符
+
+            // 清空屏幕
+            StdDraw.clear(StdDraw.BLACK);
+
+            // 更新显示地图
+            ter.renderFrame(world);
+        }
     }
 }
